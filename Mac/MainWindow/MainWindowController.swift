@@ -584,23 +584,27 @@ extension MainWindowController: TimelineContainerViewControllerDelegate {
 		isShowingExtractedArticle = false
 		makeToolbarValidate()
 		
-		let detailState: DetailState
-		if let articles = articles {
-			if articles.count == 1 {
-				activityManager.reading(feed: nil, article: articles.first)
-				if articles.first?.webFeed?.isArticleExtractorAlwaysOn ?? false {
-					detailState = .loading
-					startArticleExtractorForCurrentLink()
-				} else {
-					detailState = .article(articles.first!, restoreArticleWindowScrollY)
-					restoreArticleWindowScrollY = nil
-				}
-			} else {
-				detailState = .multipleSelection
-			}
-		} else {
-			detailState = .noSelection
-		}
+                let detailState: DetailState
+                if let articles = articles {
+                        if articles.count == 1, let article = articles.first {
+                                activityManager.reading(feed: nil, article: article)
+                                if let extracted = article.extractedArticle {
+                                        isShowingExtractedArticle = true
+                                        detailState = .extracted(article, extracted, restoreArticleWindowScrollY)
+                                        restoreArticleWindowScrollY = nil
+                                } else if article.webFeed?.isArticleExtractorAlwaysOn ?? false {
+                                        detailState = .loading
+                                        startArticleExtractorForCurrentLink()
+                                } else {
+                                        detailState = .article(article, restoreArticleWindowScrollY)
+                                        restoreArticleWindowScrollY = nil
+                                }
+                        } else {
+                                detailState = .multipleSelection
+                        }
+                } else {
+                        detailState = .noSelection
+                }
 
 		detailViewController?.setState(detailState, mode: mode)
 	}
@@ -690,15 +694,18 @@ extension MainWindowController: ArticleExtractorDelegate {
 		makeToolbarValidate()
 	}
 	
-	func articleExtractionDidComplete(extractedArticle: ExtractedArticle) {
-		if let article = oneSelectedArticle, articleExtractor?.state != .cancelled {
-			isShowingExtractedArticle = true
-			let detailState = DetailState.extracted(article, extractedArticle, restoreArticleWindowScrollY)
-			restoreArticleWindowScrollY = nil
-			detailViewController?.setState(detailState, mode: timelineSourceMode)
-			makeToolbarValidate()
-		}
-	}
+        func articleExtractionDidComplete(extractedArticle: ExtractedArticle) {
+                if let article = oneSelectedArticle, articleExtractor?.state != .cancelled {
+                        if let account = AccountManager.shared.existingAccount(with: article.accountID) {
+                                account.saveExtractedArticle(extractedArticle, articleID: article.articleID)
+                        }
+                        isShowingExtractedArticle = true
+                        let detailState = DetailState.extracted(article, extractedArticle, restoreArticleWindowScrollY)
+                        restoreArticleWindowScrollY = nil
+                        detailViewController?.setState(detailState, mode: timelineSourceMode)
+                        makeToolbarValidate()
+                }
+        }
 	
 }
 

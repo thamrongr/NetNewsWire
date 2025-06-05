@@ -26,9 +26,10 @@ public struct Article: Hashable {
 	public let datePublished: Date?
 	public let dateModified: Date?
 	public let authors: Set<Author>?
-	public let status: ArticleStatus
+        public let status: ArticleStatus
+        public let extractedArticle: ExtractedArticle?
 
-	public init(accountID: String, articleID: String?, webFeedID: String, uniqueID: String, title: String?, contentHTML: String?, contentText: String?, url: String?, externalURL: String?, summary: String?, imageURL: String?, datePublished: Date?, dateModified: Date?, authors: Set<Author>?, status: ArticleStatus) {
+        public init(accountID: String, articleID: String?, webFeedID: String, uniqueID: String, title: String?, contentHTML: String?, contentText: String?, url: String?, externalURL: String?, summary: String?, imageURL: String?, datePublished: Date?, dateModified: Date?, authors: Set<Author>?, status: ArticleStatus, extractedArticle: ExtractedArticle? = nil) {
 		self.accountID = accountID
 		self.webFeedID = webFeedID
 		self.uniqueID = uniqueID
@@ -42,7 +43,8 @@ public struct Article: Hashable {
 		self.datePublished = datePublished
 		self.dateModified = dateModified
 		self.authors = authors
-		self.status = status
+                self.status = status
+                self.extractedArticle = extractedArticle
 		
 		if let articleID = articleID {
 			self.articleID = articleID
@@ -64,9 +66,9 @@ public struct Article: Hashable {
 
 	// MARK: - Equatable
 
-	static public func ==(lhs: Article, rhs: Article) -> Bool {
-		return lhs.articleID == rhs.articleID && lhs.accountID == rhs.accountID && lhs.webFeedID == rhs.webFeedID && lhs.uniqueID == rhs.uniqueID && lhs.title == rhs.title && lhs.contentHTML == rhs.contentHTML && lhs.contentText == rhs.contentText && lhs.rawLink == rhs.rawLink && lhs.rawExternalLink == rhs.rawExternalLink && lhs.summary == rhs.summary && lhs.rawImageLink == rhs.rawImageLink && lhs.datePublished == rhs.datePublished && lhs.dateModified == rhs.dateModified && lhs.authors == rhs.authors
-	}
+        static public func ==(lhs: Article, rhs: Article) -> Bool {
+                return lhs.articleID == rhs.articleID && lhs.accountID == rhs.accountID && lhs.webFeedID == rhs.webFeedID && lhs.uniqueID == rhs.uniqueID && lhs.title == rhs.title && lhs.contentHTML == rhs.contentHTML && lhs.contentText == rhs.contentText && lhs.rawLink == rhs.rawLink && lhs.rawExternalLink == rhs.rawExternalLink && lhs.summary == rhs.summary && lhs.rawImageLink == rhs.rawImageLink && lhs.datePublished == rhs.datePublished && lhs.dateModified == rhs.dateModified && lhs.authors == rhs.authors && lhs.extractedArticle == rhs.extractedArticle
+        }
 }
 
 public extension Set where Element == Article {

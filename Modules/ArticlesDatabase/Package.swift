@@ -16,14 +16,17 @@ let package = Package(
 		.package(path: "../RSParser"),
 		.package(path: "../RSDatabase"),
 	],
-	targets: [
-		.target(
-			name: "ArticlesDatabase",
-			dependencies: [
-				"RSCore",
-				"RSDatabase",
-				"RSParser",
-				"Articles",
-			]),
-	]
+        targets: [
+                .target(
+                        name: "ArticlesDatabase",
+                        dependencies: [
+                                "RSCore",
+                                "RSDatabase",
+                                "RSParser",
+                                "Articles",
+                        ]),
+                .testTarget(
+                        name: "ArticlesDatabaseTests",
+                        dependencies: ["ArticlesDatabase"]),
+        ]
 )
