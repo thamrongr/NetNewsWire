@@ -108,21 +108,28 @@ class WebViewController: UIViewController {
 	
 	// MARK: API
 
-	func setArticle(_ article: Article?, updateView: Bool = true) {
-		stopArticleExtractor()
-		
-		if article != self.article {
-			self.article = article
-			if updateView {
-				if article?.webFeed?.isArticleExtractorAlwaysOn ?? false {
-					startArticleExtractor()
-				}
-				windowScrollY = 0
-				loadWebView()
-			}
-		}
-		
-	}
+        func setArticle(_ article: Article?, updateView: Bool = true) {
+                stopArticleExtractor()
+
+                if article != self.article {
+                        self.article = article
+                        if updateView {
+                                if let extracted = article?.extractedArticle {
+                                        self.extractedArticle = extracted
+                                        isShowingExtractedArticle = true
+                                        articleExtractorButtonState = .on
+                                } else if article?.webFeed?.isArticleExtractorAlwaysOn ?? false {
+                                        startArticleExtractor()
+                                } else {
+                                        isShowingExtractedArticle = false
+                                        articleExtractorButtonState = .off
+                                }
+                                windowScrollY = 0
+                                loadWebView()
+                        }
+                }
+
+        }
 	
 	func setScrollPosition(isShowingExtractedArticle: Bool, articleWindowScrollY: Int) {
 		if isShowingExtractedArticle {
@@ -289,17 +296,20 @@ extension WebViewController: ArticleExtractorDelegate {
 		loadWebView()
 	}
 
-	func articleExtractionDidComplete(extractedArticle: ExtractedArticle) {
-		if articleExtractor?.state != .cancelled {
-			self.extractedArticle = extractedArticle
-			if let restoreWindowScrollY = restoreWindowScrollY {
-				windowScrollY = restoreWindowScrollY
-			}
-			isShowingExtractedArticle = true
-			loadWebView()
-			articleExtractorButtonState = .on
-		}
-	}
+        func articleExtractionDidComplete(extractedArticle: ExtractedArticle) {
+                if articleExtractor?.state != .cancelled {
+                        if let article = article {
+                                article.account?.saveExtractedArticle(extractedArticle, articleID: article.articleID)
+                        }
+                        self.extractedArticle = extractedArticle
+                        if let restoreWindowScrollY = restoreWindowScrollY {
+                                windowScrollY = restoreWindowScrollY
+                        }
+                        isShowingExtractedArticle = true
+                        loadWebView()
+                        articleExtractorButtonState = .on
+                }
+        }
 
 }
 

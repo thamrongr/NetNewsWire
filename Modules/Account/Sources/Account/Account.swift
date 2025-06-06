@@ -712,9 +712,13 @@ public final class Account: DisplayNameProvider, UnreadCountProvider, Container,
 	}
 
 	/// Fetch articleIDs for articles that we should have, but don’t. These articles are either (starred) or (newer than the article cutoff date).
-	public func fetchArticleIDsForStatusesWithoutArticlesNewerThanCutoffDate(_ completion: @escaping ArticleIDsCompletionBlock) {
-		database.fetchArticleIDsForStatusesWithoutArticlesNewerThanCutoffDate(completion)
-	}
+        public func fetchArticleIDsForStatusesWithoutArticlesNewerThanCutoffDate(_ completion: @escaping ArticleIDsCompletionBlock) {
+                database.fetchArticleIDsForStatusesWithoutArticlesNewerThanCutoffDate(completion)
+        }
+
+        public func saveExtractedArticle(_ extractedArticle: ExtractedArticle, articleID: String) {
+                database.saveExtractedArticle(extractedArticle, for: articleID)
+        }
 	
 	public func unreadCount(for webFeed: WebFeed) -> Int {
 		return unreadCounts[webFeed.webFeedID] ?? 0

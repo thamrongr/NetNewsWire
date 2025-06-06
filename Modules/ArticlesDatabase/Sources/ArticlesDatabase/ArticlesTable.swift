@@ -488,21 +488,39 @@ final class ArticlesTable: DatabaseTable {
 		}
 	}
 
-	func createStatusesIfNeeded(_ articleIDs: Set<String>, _ completion: @escaping DatabaseCompletionBlock) {
-		queue.runInTransaction { databaseResult in
-			switch databaseResult {
-			case .success(let database):
-				let _ = self.statusesTable.ensureStatusesForArticleIDs(articleIDs, true, database)
-				DispatchQueue.main.async {
-					completion(nil)
-				}
-			case .failure(let databaseError):
-				DispatchQueue.main.async {
-					completion(databaseError)
-				}
-			}
-		}
-	}
+        func createStatusesIfNeeded(_ articleIDs: Set<String>, _ completion: @escaping DatabaseCompletionBlock) {
+                queue.runInTransaction { databaseResult in
+                        switch databaseResult {
+                        case .success(let database):
+                                let _ = self.statusesTable.ensureStatusesForArticleIDs(articleIDs, true, database)
+                                DispatchQueue.main.async {
+                                        completion(nil)
+                                }
+                        case .failure(let databaseError):
+                                DispatchQueue.main.async {
+                                        completion(databaseError)
+                                }
+                        }
+                }
+        }
+
+        func saveExtractedArticle(_ article: ExtractedArticle, for articleID: String) {
+                queue.runInTransaction { databaseResult in
+                        switch databaseResult {
+                        case .success(let database):
+                                if let data = try? JSONEncoder().encode(article) {
+                                        let update: DatabaseDictionary = [DatabaseKey.extractedArticle: data]
+                                        self.updateRowsWithDictionary(update, whereKey: DatabaseKey.articleID, matches: articleID, database: database)
+                                        if let existing = articlesCache[articleID] {
+                                                let updated = Article(accountID: existing.accountID, articleID: existing.articleID, webFeedID: existing.webFeedID, uniqueID: existing.uniqueID, title: existing.title, contentHTML: existing.contentHTML, contentText: existing.contentText, url: existing.rawLink, externalURL: existing.rawExternalLink, summary: existing.summary, imageURL: existing.rawImageLink, datePublished: existing.datePublished, dateModified: existing.dateModified, authors: existing.authors, status: existing.status, extractedArticle: article)
+                                                articlesCache[articleID] = updated
+                                        }
+                                }
+                        case .failure:
+                                break
+                        }
+                }
+        }
 
 	// MARK: - Indexing
 
