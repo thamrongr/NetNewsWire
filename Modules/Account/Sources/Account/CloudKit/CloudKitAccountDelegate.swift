@@ -42,7 +42,13 @@ final class CloudKitAccountDelegate: AccountDelegate {
 	private let articlesZone: CloudKitArticlesZone
 
 	private let mainThreadOperationQueue = MainThreadOperationQueue()
-	private let refresher: LocalAccountRefresher
+       private let refresher: LocalAccountRefresher
+       private let articleExtractionQueue: OperationQueue = {
+               let queue = OperationQueue()
+               queue.maxConcurrentOperationCount = 4
+               queue.name = "ArticleExtractionQueue"
+               return queue
+       }()
 
 	weak var account: Account?
 
@@ -810,10 +816,18 @@ private extension CloudKitAccountDelegate {
 
 extension CloudKitAccountDelegate: LocalAccountRefresherDelegate {
 
-	func localAccountRefresher(_ refresher: LocalAccountRefresher, articleChanges: ArticleChanges) {
-		self.storeArticleChanges(new: articleChanges.newArticles,
-								 updated: articleChanges.updatedArticles,
-								 deleted: articleChanges.deletedArticles,
-								 completion: nil)
-	}
+        func localAccountRefresher(_ refresher: LocalAccountRefresher, articleChanges: ArticleChanges) {
+               self.storeArticleChanges(new: articleChanges.newArticles,
+                                         updated: articleChanges.updatedArticles,
+                                         deleted: articleChanges.deletedArticles,
+                                         completion: nil)
+
+               let articles = articleChanges.newArticles.union(articleChanges.updatedArticles)
+               for article in articles {
+                       guard article.webFeed?.isArticleExtractorAlwaysOn ?? true else { continue }
+                       if let operation = ArticleExtractionOperation(article: article) {
+                               articleExtractionQueue.addOperation(operation)
+                       }
+               }
+        }
 }
