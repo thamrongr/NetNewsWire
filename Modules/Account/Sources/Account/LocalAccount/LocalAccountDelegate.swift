@@ -36,11 +36,18 @@ final class LocalAccountDelegate: AccountDelegate {
 	var credentials: Credentials?
 	var accountMetadata: AccountMetadata?
 
-	private lazy var refresher: LocalAccountRefresher = {
-		let refresher = LocalAccountRefresher()
-		refresher.delegate = self
-		return refresher
-	}()
+        private lazy var refresher: LocalAccountRefresher = {
+                let refresher = LocalAccountRefresher()
+                refresher.delegate = self
+                return refresher
+        }()
+
+       private let articleExtractionQueue: OperationQueue = {
+               let queue = OperationQueue()
+               queue.maxConcurrentOperationCount = 4
+               queue.name = "ArticleExtractionQueue"
+               return queue
+       }()
 
 	func receiveRemoteNotification(for account: Account, userInfo: [AnyHashable : Any], completion: @escaping () -> Void) {
 		completion()
@@ -215,9 +222,16 @@ final class LocalAccountDelegate: AccountDelegate {
 }
 
 extension LocalAccountDelegate: LocalAccountRefresherDelegate {
-		
-	func localAccountRefresher(_ refresher: LocalAccountRefresher, articleChanges: ArticleChanges) {
-	}
+
+        func localAccountRefresher(_ refresher: LocalAccountRefresher, articleChanges: ArticleChanges) {
+               let articles = articleChanges.newArticles.union(articleChanges.updatedArticles)
+               for article in articles {
+                       guard article.webFeed?.isArticleExtractorAlwaysOn ?? true else { continue }
+                       if let operation = ArticleExtractionOperation(article: article) {
+                               articleExtractionQueue.addOperation(operation)
+                       }
+               }
+       }
 }
 
 private extension LocalAccountDelegate {

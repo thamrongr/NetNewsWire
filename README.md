@@ -6,6 +6,8 @@ NetNewsWire is a free and open-source feed reader for macOS and iOS.
 
 It supports [RSS](https://cyber.harvard.edu/rss/rss.html), [Atom](https://datatracker.ietf.org/doc/html/rfc4287), [JSON Feed](https://jsonfeed.org/), and [RSS-in-JSON](https://github.com/scripting/Scripting-News/blob/master/rss-in-json/README.md) formats.
 
+Refreshing feeds now also fetches full-text versions of new articles using Reader View. This may generate extra network traffic.
+
 More info: [https://netnewswire.com/](https://netnewswire.com/)
 
 You can [report bugs and make feature requests](https://github.com/Ranchero-Software/NetNewsWire/issues) here on GitHub. You can also [read change notes](https://github.com/Ranchero-Software/NetNewsWire/releases/) for current and previous releases.
