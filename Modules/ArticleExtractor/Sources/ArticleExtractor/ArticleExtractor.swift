@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import Account
 import Articles
 import Secrets
 
@@ -19,19 +18,19 @@ public enum ArticleExtractorState {
 	case cancelled
 }
 
-protocol ArticleExtractorDelegate {
+public protocol ArticleExtractorDelegate {
     func articleExtractionDidFail(with: Error)
     func articleExtractionDidComplete(extractedArticle: ExtractedArticle)
 }
 
-class ArticleExtractor {
+public class ArticleExtractor {
 	
 	private var dataTask: URLSessionDataTask? = nil
     
-    var state: ArticleExtractorState!
-    var article: ExtractedArticle?
-    var delegate: ArticleExtractorDelegate?
-	var articleLink: String?
+	public var state: ArticleExtractorState!
+	public var article: ExtractedArticle?
+	public var delegate: ArticleExtractorDelegate?
+	public var articleLink: String?
 	
     private var url: URL!
     
@@ -39,8 +38,8 @@ class ArticleExtractor {
 		self.articleLink = articleLink
 		
 		let clientURL = "https://extract.feedbin.com/parser"
-		let username = SecretsManager.provider.mercuryClientId
-		let signature = articleLink.hmacUsingSHA1(key: SecretsManager.provider.mercuryClientSecret)
+		let username = "" //SecretsManager.provider.mercuryClientId
+		let signature = "" //articleLink.hmacUsingSHA1(key: SecretsManager.provider.mercuryClientSecret)
 		
 		if let base64URL = articleLink.data(using: .utf8)?.base64EncodedString() {
 			let fullURL = "\(clientURL)/\(username)/\(signature)?base64_url=\(base64URL)"

@@ -17,6 +17,7 @@ import Articles
 import ArticlesDatabase
 import RSWeb
 import Secrets
+import ArticleExtractor
 
 enum CloudKitAccountDelegateError: LocalizedError {
 	case invalidParameter
@@ -822,12 +823,17 @@ extension CloudKitAccountDelegate: LocalAccountRefresherDelegate {
                                          deleted: articleChanges.deletedArticles,
                                          completion: nil)
 
-               let articles = articleChanges.newArticles.union(articleChanges.updatedArticles)
+			let updated = articleChanges.updatedArticles ?? []
+			let newArticle = articleChanges.newArticles ?? []
+			let articles = newArticle.union(updated)
                for article in articles {
                        guard article.webFeed?.isArticleExtractorAlwaysOn ?? true else { continue }
-                       if let operation = ArticleExtractionOperation(article: article) {
-                               articleExtractionQueue.addOperation(operation)
-                       }
+						if let operation = ArticleExtractionOperation(article: article,
+						   saveHandler: { [weak account] extracted, id in
+							   account?.saveExtractedArticle(extracted, articleID: id)
+						   }) {
+						   articleExtractionQueue.addOperation(operation)
+						}
                }
         }
 }

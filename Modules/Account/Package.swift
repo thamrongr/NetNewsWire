@@ -19,6 +19,7 @@ let package = Package(
 		.package(path: "../RSParser"),
 		.package(path: "../RSCore"),
 		.package(path: "../RSDatabase"),
+		.package(path: "../ArticleExtractor"),
 	],
 	targets: [
 		.target(
@@ -32,6 +33,7 @@ let package = Package(
 				"ArticlesDatabase",
 				"Secrets",
 				"SyncDatabase",
+				"ArticleExtractor",
 			]),
 		.testTarget(
 			name: "AccountTests",

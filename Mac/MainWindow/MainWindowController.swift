@@ -11,6 +11,7 @@ import UserNotifications
 import Articles
 import Account
 import RSCore
+import ArticleExtractor
 
 enum TimelineSourceMode {
 	case regular, search

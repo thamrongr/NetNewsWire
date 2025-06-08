@@ -1,15 +1,16 @@
 import Foundation
 import Articles
 
-final class ArticleExtractionOperation: Operation, ArticleExtractorDelegate {
+public final class ArticleExtractionOperation: Operation, ArticleExtractorDelegate {
     private var extractor: ArticleExtractor?
     private let article: Article
+	private let saveHandler: (ExtractedArticle, String) -> Void
 
     private var _isExecuting = false
     private var _isFinished = false
 
-    override var isAsynchronous: Bool { true }
-    override private(set) var isExecuting: Bool {
+	public override var isAsynchronous: Bool { true }
+	public override private(set) var isExecuting: Bool {
         get { _isExecuting }
         set {
             willChangeValue(forKey: "isExecuting")
@@ -17,7 +18,7 @@ final class ArticleExtractionOperation: Operation, ArticleExtractorDelegate {
             didChangeValue(forKey: "isExecuting")
         }
     }
-    override private(set) var isFinished: Bool {
+	public override private(set) var isFinished: Bool {
         get { _isFinished }
         set {
             willChangeValue(forKey: "isFinished")
@@ -26,14 +27,15 @@ final class ArticleExtractionOperation: Operation, ArticleExtractorDelegate {
         }
     }
 
-    init?(article: Article) {
-        guard let link = article.preferredLink, let extractor = ArticleExtractor(link) else { return nil }
+	public init?(article: Article, saveHandler: @escaping (ExtractedArticle, String) -> Void) {
+        guard let link = article.rawLink, let extractor = ArticleExtractor(link) else { return nil }
         self.article = article
         self.extractor = extractor
+		self.saveHandler = saveHandler
         super.init()
     }
 
-    override func start() {
+	public override func start() {
         if isCancelled {
             finish()
             return
@@ -47,7 +49,7 @@ final class ArticleExtractionOperation: Operation, ArticleExtractorDelegate {
         extractor.process()
     }
 
-    override func cancel() {
+	public override func cancel() {
         extractor?.cancel()
         super.cancel()
         finish()
@@ -59,12 +61,12 @@ final class ArticleExtractionOperation: Operation, ArticleExtractorDelegate {
     }
 
     // MARK: ArticleExtractorDelegate
-    func articleExtractionDidFail(with: Error) {
+	public func articleExtractionDidFail(with: Error) {
         finish()
     }
 
-    func articleExtractionDidComplete(extractedArticle: ExtractedArticle) {
-        article.account?.saveExtractedArticle(extractedArticle, articleID: article.articleID)
-        finish()
-    }
+	public func articleExtractionDidComplete(extractedArticle: ExtractedArticle) {
+		saveHandler(extractedArticle, article.articleID)
+		finish()
+	}
 }
