@@ -25,7 +25,8 @@ final class WebFeedMetadata: Codable {
 		case authors
 		case contentHash
 		case isNotifyAboutNewArticles
-		case isArticleExtractorAlwaysOn
+               case isArticleExtractorAlwaysOn
+               case isArticleExtractorTextAlwaysOn
 		case conditionalGetInfo
 		case cacheControlInfo
 		case externalID = "subscriptionID"
@@ -88,13 +89,21 @@ final class WebFeedMetadata: Codable {
 		}
 	}
 
-	var isArticleExtractorAlwaysOn: Bool? {
-		didSet {
-			if isArticleExtractorAlwaysOn != oldValue {
-				valueDidChange(.isArticleExtractorAlwaysOn)
-			}
-		}
-	}
+        var isArticleExtractorAlwaysOn: Bool? {
+                didSet {
+                        if isArticleExtractorAlwaysOn != oldValue {
+                                valueDidChange(.isArticleExtractorAlwaysOn)
+                        }
+                }
+        }
+
+       var isArticleExtractorTextAlwaysOn: Bool? {
+               didSet {
+                       if isArticleExtractorTextAlwaysOn != oldValue {
+                               valueDidChange(.isArticleExtractorTextAlwaysOn)
+                       }
+               }
+       }
 
 	var authors: [Author]? {
 		didSet {

@@ -23,7 +23,9 @@ class MainWindowController : NSWindowController, NSUserInterfaceValidations {
     
     private var activityManager = ActivityManager()
 
-	private var isShowingExtractedArticle = false
+    private var isShowingExtractedArticle = false
+    private var isShowingExtractedArticleText = false
+    private var articleExtractorIsText = false
 	private var articleExtractor: ArticleExtractor? = nil
 	private var sharingServicePickerDelegate: NSSharingServicePickerDelegate?
 
@@ -375,7 +377,7 @@ class MainWindowController : NSWindowController, NSUserInterfaceValidations {
 		currentTimelineViewController?.toggleStarredStatusForSelectedArticles()
 	}
 
-	@IBAction func toggleArticleExtractor(_ sender: Any?) {
+        @IBAction func toggleArticleExtractor(_ sender: Any?) {
 		
 		guard let currentLink = currentLink, let article = oneSelectedArticle else {
 			return
@@ -390,31 +392,80 @@ class MainWindowController : NSWindowController, NSUserInterfaceValidations {
 			return
 		}
 		
-		guard articleExtractor?.state != .processing else {
-			articleExtractor?.cancel()
-			articleExtractor = nil
-			isShowingExtractedArticle = false
-			detailViewController?.setState(DetailState.article(article, nil), mode: timelineSourceMode)
-			return
-		}
+                guard articleExtractor?.state != .processing else {
+                        articleExtractor?.cancel()
+                        articleExtractor = nil
+                        articleExtractorIsText = false
+                        isShowingExtractedArticle = false
+                        detailViewController?.setState(DetailState.article(article, nil), mode: timelineSourceMode)
+                        return
+                }
 		
-		guard !isShowingExtractedArticle else {
-			isShowingExtractedArticle = false
-			detailViewController?.setState(DetailState.article(article, nil), mode: timelineSourceMode)
-			return
-		}
+                guard !isShowingExtractedArticle else {
+                        isShowingExtractedArticle = false
+                        isShowingExtractedArticleText = false
+                        detailViewController?.setState(DetailState.article(article, nil), mode: timelineSourceMode)
+                        return
+                }
 		
-		if let articleExtractor = articleExtractor, let extractedArticle = articleExtractor.article {
-			if currentLink == articleExtractor.articleLink {
-				isShowingExtractedArticle = true
-				let detailState = DetailState.extracted(article, extractedArticle, nil)
-				detailViewController?.setState(detailState, mode: timelineSourceMode)
-			}
-		} else {
-			startArticleExtractorForCurrentLink()
-		}
-		
-	}
+                if let articleExtractor = articleExtractor, let extractedArticle = articleExtractor.article {
+                        if currentLink == articleExtractor.articleLink {
+                                isShowingExtractedArticle = true
+                                if articleExtractorIsText {
+                                        isShowingExtractedArticleText = true
+                                }
+                                let detailState = DetailState.extracted(article, extractedArticle, nil)
+                                detailViewController?.setState(detailState, mode: timelineSourceMode)
+                        }
+                } else {
+                        startArticleExtractorForCurrentLink()
+                }
+
+        }
+
+        @IBAction func toggleArticleExtractorText(_ sender: Any?) {
+
+                guard let currentLink = currentLink, let article = oneSelectedArticle else {
+                        return
+                }
+
+                defer {
+                        makeToolbarValidate()
+                }
+
+                if articleExtractor?.state == .failedToParse {
+                        startArticleExtractorTextForCurrentLink()
+                        return
+                }
+
+                guard articleExtractor?.state != .processing else {
+                        articleExtractor?.cancel()
+                        articleExtractor = nil
+                        articleExtractorIsText = false
+                        isShowingExtractedArticleText = false
+                        detailViewController?.setState(DetailState.article(article, nil), mode: timelineSourceMode)
+                        return
+                }
+
+                guard !isShowingExtractedArticleText else {
+                        isShowingExtractedArticleText = false
+                        articleExtractorIsText = false
+                        detailViewController?.setState(DetailState.article(article, nil), mode: timelineSourceMode)
+                        return
+                }
+
+                if let articleExtractor = articleExtractor, let extractedArticle = articleExtractor.article {
+                        if currentLink == articleExtractor.articleLink {
+                                isShowingExtractedArticleText = true
+                                articleExtractorIsText = true
+                                let detailState = DetailState.extracted(article, extractedArticle, nil)
+                                detailViewController?.setState(detailState, mode: timelineSourceMode)
+                        }
+                } else {
+                        startArticleExtractorTextForCurrentLink()
+                }
+
+        }
 
 	@IBAction func markAllAsReadAndGoToNextUnread(_ sender: Any?) {
 		currentTimelineViewController?.markAllAsRead() {
@@ -580,10 +631,12 @@ extension MainWindowController: TimelineContainerViewControllerDelegate {
 	func timelineSelectionDidChange(_: TimelineContainerViewController, articles: [Article]?, mode: TimelineSourceMode) {
 		activityManager.invalidateReading()
 		
-		articleExtractor?.cancel()
-		articleExtractor = nil
-		isShowingExtractedArticle = false
-		makeToolbarValidate()
+                articleExtractor?.cancel()
+                articleExtractor = nil
+                articleExtractorIsText = false
+                isShowingExtractedArticle = false
+                isShowingExtractedArticleText = false
+                makeToolbarValidate()
 		
                 let detailState: DetailState
                 if let articles = articles {
@@ -596,6 +649,9 @@ extension MainWindowController: TimelineContainerViewControllerDelegate {
                                 } else if article.webFeed?.isArticleExtractorAlwaysOn ?? false {
                                         detailState = .loading
                                         startArticleExtractorForCurrentLink()
+                                } else if article.webFeed?.isArticleExtractorTextAlwaysOn ?? false {
+                                        detailState = .loading
+                                        startArticleExtractorTextForCurrentLink()
                                 } else {
                                         detailState = .article(article, restoreArticleWindowScrollY)
                                         restoreArticleWindowScrollY = nil
@@ -701,6 +757,9 @@ extension MainWindowController: ArticleExtractorDelegate {
                                 account.saveExtractedArticle(extractedArticle, articleID: article.articleID)
                         }
                         isShowingExtractedArticle = true
+                        if articleExtractorIsText {
+                                isShowingExtractedArticleText = true
+                        }
                         let detailState = DetailState.extracted(article, extractedArticle, restoreArticleWindowScrollY)
                         restoreArticleWindowScrollY = nil
                         detailViewController?.setState(detailState, mode: timelineSourceMode)
@@ -1237,21 +1296,23 @@ private extension MainWindowController {
 		}
 	}
 
-	func startArticleExtractorForCurrentLink() {
-		if let link = currentLink, let extractor = ArticleExtractor(link) {
-			extractor.delegate = self
-			extractor.process()
-			articleExtractor = extractor
-		}
-	}
+        func startArticleExtractorForCurrentLink() {
+                if let link = currentLink, let extractor = ArticleExtractor(link) {
+                        extractor.delegate = self
+                        extractor.process()
+                        articleExtractor = extractor
+                        articleExtractorIsText = false
+                }
+        }
 
-	func startArticleExtractorTextForCurrentLink() {
-		if let link = currentLink, let extractor = ArticleExtractor(link, skipParsing: true) {
-			extractor.delegate = self
-			extractor.processText()
-			articleExtractor = extractor
-		}
-	}
+        func startArticleExtractorTextForCurrentLink() {
+                if let link = currentLink, let extractor = ArticleExtractor(link, skipParsing: true) {
+                        extractor.delegate = self
+                        extractor.processText()
+                        articleExtractor = extractor
+                        articleExtractorIsText = true
+                }
+        }
 	
 	func saveSplitViewState(to state: inout [AnyHashable : Any]) {
 		guard let splitView = splitViewController?.splitView else {

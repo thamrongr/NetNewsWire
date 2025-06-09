@@ -231,10 +231,11 @@ extension LocalAccountDelegate: LocalAccountRefresherDelegate {
 			let articles = newArticle.union(updated)
                for article in articles {
                        guard article.webFeed?.isArticleExtractorAlwaysOn ?? true else { continue }
-					   if let operation = ArticleExtractionOperation(article: article,
-						   saveHandler: { [weak account] extracted, id in
-							account?.saveExtractedArticle(extracted, articleID: id)
-						   }) {
+                       guard article.webFeed?.isArticleExtractorTextAlwaysOn ?? true else { continue }
+                                          if let operation = ArticleExtractionOperation(article: article,
+                                                  saveHandler: { [weak account] extracted, id in
+                                                       account?.saveExtractedArticle(extracted, articleID: id)
+                                                  }) {
 						   articleExtractionQueue.addOperation(operation)
 					   }
                }
@@ -273,14 +274,32 @@ private extension LocalAccountDelegate {
 						feed.editedName = editedName
 						container.addWebFeed(feed)
 
-						account.update(feed, with: parsedFeed, {_ in
-							BatchUpdate.shared.end()
-							completion(.success(feed))
-						})
-					} else {
-						BatchUpdate.shared.end()
-						completion(.failure(AccountError.createErrorNotFound))
-					}
+                                                account.update(feed, with: parsedFeed) { result in
+                                                        BatchUpdate.shared.end()
+                                                        switch result {
+                                                        case .success(let changes):
+                                                                let updated = changes.updatedArticles ?? []
+                                                                let newArticles = changes.newArticles ?? []
+                                                                let articles = newArticles.union(updated)
+                                                                for article in articles {
+                                                                        guard article.webFeed?.isArticleExtractorAlwaysOn ?? true else { continue }
+                                                                        guard article.webFeed?.isArticleExtractorTextAlwaysOn ?? true else { continue }
+                                                                        if let operation = ArticleExtractionOperation(article: article,
+                                                                                                                     saveHandler: { [weak account] extracted, id in
+                                                                                                                             account?.saveExtractedArticle(extracted, articleID: id)
+                                                                                                                     }) {
+                                                                                self.articleExtractionQueue.addOperation(operation)
+                                                                        }
+                                                                }
+                                                                completion(.success(feed))
+                                                        case .failure(let error):
+                                                                completion(.failure(error))
+                                                        }
+                                                }
+                                        } else {
+                                                BatchUpdate.shared.end()
+                                                completion(.failure(AccountError.createErrorNotFound))
+                                        }
 				}
 				
 			case .failure:
