@@ -9,6 +9,8 @@
 import Foundation
 import Articles
 import Secrets
+import SwiftSoup
+import RSParser
 
 public enum ArticleExtractorState {
     case ready
@@ -89,23 +91,109 @@ public class ArticleExtractor {
 						self.state = .complete
 						self.delegate?.articleExtractionDidComplete(extractedArticle: self.article!)
 					}
-                }
-            } catch {
-                self.state = .failedToParse
-                DispatchQueue.main.async {
-                    self.delegate?.articleExtractionDidFail(with: error)
-                }
-            }
-            
-        }
-        
-        dataTask!.resume()
+				}
+			} catch {
+				self.state = .failedToParse
+				DispatchQueue.main.async {
+					self.delegate?.articleExtractionDidFail(with: error)
+				}
+			}
+			
+		}
 		
-    }
+		dataTask!.resume()
+		
+	}
+	
+	public init?(_ articleLink: String, skipParsing: Bool = false) {
+		self.articleLink = articleLink
+		if let url = URL(string: articleLink) {
+			self.url = url
+			return
+		}
+		return nil
+	}
+	
+	public func processText() {
+		
+		state = .processing
+		
+		dataTask = URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+
+			guard let self = self else { return }
+			
+			if let error = error {
+				self.state = .failedToParse
+				DispatchQueue.main.async {
+					self.delegate?.articleExtractionDidFail(with: error)
+				}
+				return
+			}
+			
+			guard let data = data else {
+				self.state = .failedToParse
+				DispatchQueue.main.async {
+					self.delegate?.articleExtractionDidFail(with: URLError(.cannotDecodeContentData))
+				}
+				return
+			}
+ 
+			do {
+				let htmlString = String(data: data, encoding: .utf8) ?? ""
+				let document = try SwiftSoup.parse(htmlString)
+				let title = try document.title()
+				let articleElement = try document.select("article").first()
+				let body: String
+
+				if let articleText = try articleElement?.text(), !articleText.isEmpty {
+					body = articleText
+				} else if let bodyText = try document.body()?.text() {
+					body = bodyText
+				} else {
+					body = ""
+				}
+				_ = ParsedFeed(
+					type: .rss,
+					title: "",
+					homePageURL: nil,
+					feedURL: self.url?.absoluteString,
+					language: nil,
+					feedDescription: nil,
+					nextURL: nil,
+					iconURL: nil,
+					faviconURL: nil,
+					authors: nil,
+					expired: false,
+					hubs: nil,
+					items: []
+				)
+				let extracted = ExtractedArticle(title: title, author: nil, datePublished: nil, dek: nil, leadImageURL: nil, content: body, nextPageURL: nil, url: self.url?.absoluteString, domain: nil, excerpt: nil, wordCount: nil, direction: nil, totalPages: nil, renderedPages: nil)
+				DispatchQueue.main.async {
+					self.article = extracted
+					if self.article?.content?.isEmpty ?? true {
+						self.state = .failedToParse
+						self.delegate?.articleExtractionDidFail(with: URLError(.cannotDecodeContentData))
+					} else {
+						self.state = .complete
+						self.delegate?.articleExtractionDidComplete(extractedArticle: extracted)
+					}
+				}
+			} catch {
+				self.state = .failedToParse
+				DispatchQueue.main.async {
+					self.delegate?.articleExtractionDidFail(with: error)
+				}
+			}
+			
+		}
+		
+		dataTask!.resume()
+		
+	}
 	
 	public func cancel() {
 		state = .cancelled
 		dataTask?.cancel()
 	}
-    
+	
 }

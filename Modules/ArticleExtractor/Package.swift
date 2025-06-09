@@ -14,12 +14,16 @@ let package = Package(
 	],
 	dependencies: [
 		.package(path: "../Articles"),
+		.package(path: "../RSParser"),
+		.package(path: "../SwiftSoup"),
 	],
 	targets: [
 		.target(
 			name: "ArticleExtractor",
 			dependencies: [
-				"Articles"
+				"Articles",
+				"RSParser",
+				"SwiftSoup",
 			]),
 	]
 )

@@ -74,12 +74,15 @@
 		84EE43492DB8A441009D3A8D /* RSDatabase in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 84EE43472DB8A441009D3A8D /* RSDatabase */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		84EE434B2DB8A44C009D3A8D /* RSDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = 84EE434A2DB8A44C009D3A8D /* RSDatabase */; };
 		84EE434C2DB8A44C009D3A8D /* RSDatabase in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 84EE434A2DB8A44C009D3A8D /* RSDatabase */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		9A1DAC5A2DF6C0A500F31FA4 /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = 9AE8F1402DF6AA0B002F85C9 /* SwiftSoup */; };
 		9A3B83C12DF535A70056C296 /* ArticleExtractor in Frameworks */ = {isa = PBXBuildFile; productRef = 9A3B83C02DF535A70056C296 /* ArticleExtractor */; };
 		9A3B83C22DF535A70056C296 /* ArticleExtractor in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 9A3B83C02DF535A70056C296 /* ArticleExtractor */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		9AA9F0782DF4A31500A79211 /* ArticleExtractor in Frameworks */ = {isa = PBXBuildFile; productRef = 9AA9F0772DF4A31500A79211 /* ArticleExtractor */; };
 		9AA9F0792DF4A31500A79211 /* ArticleExtractor in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 9AA9F0772DF4A31500A79211 /* ArticleExtractor */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		9AA9F07B2DF4A31E00A79211 /* ArticleExtractor in Frameworks */ = {isa = PBXBuildFile; productRef = 9AA9F07A2DF4A31E00A79211 /* ArticleExtractor */; };
 		9AA9F07C2DF4A31E00A79211 /* ArticleExtractor in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 9AA9F07A2DF4A31E00A79211 /* ArticleExtractor */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		9AE8F1422DF6AA0B002F85C9 /* SwiftSoup in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 9AE8F1402DF6AA0B002F85C9 /* SwiftSoup */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		9AE8F1452DF6BD1C002F85C9 /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = 9AE8F1442DF6BD1C002F85C9 /* SwiftSoup */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -255,6 +258,7 @@
 				8424B3192DB73D4C0053AA11 /* RSParser in Embed Frameworks */,
 				9AA9F0792DF4A31500A79211 /* ArticleExtractor in Embed Frameworks */,
 				513277442590FBB60064F1E7 /* Account in Embed Frameworks */,
+				9AE8F1422DF6AA0B002F85C9 /* SwiftSoup in Embed Frameworks */,
 				5132775F2590FC640064F1E7 /* Articles in Embed Frameworks */,
 				843E2F182CF2B8A700ED170F /* RSWeb in Embed Frameworks */,
 				84EE3F132DB8A088009D3A8D /* RSTree in Embed Frameworks */,
@@ -597,6 +601,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9A1DAC5A2DF6C0A500F31FA4 /* SwiftSoup in Frameworks */,
 				8424B3182DB73D4C0053AA11 /* RSParser in Frameworks */,
 				848E84D02DB749440023F3BA /* RSCoreResources in Frameworks */,
 				513277642590FC640064F1E7 /* SyncDatabase in Frameworks */,
@@ -610,6 +615,7 @@
 				179C39EA26F76B0500D4E741 /* Zip in Frameworks */,
 				514C16CE24D2E63F009A3AFA /* Account in Frameworks */,
 				848E84CD2DB749440023F3BA /* RSCore in Frameworks */,
+				9AE8F1452DF6BD1C002F85C9 /* SwiftSoup in Frameworks */,
 				843E2F172CF2B8A700ED170F /* RSWeb in Frameworks */,
 				519CA8E525841DB700EB079A /* CrashReporter in Frameworks */,
 			);
@@ -898,6 +904,8 @@
 				84EE3F112DB8A088009D3A8D /* RSTree */,
 				84EE43472DB8A441009D3A8D /* RSDatabase */,
 				9AA9F0772DF4A31500A79211 /* ArticleExtractor */,
+				9AE8F1402DF6AA0B002F85C9 /* SwiftSoup */,
+				9AE8F1442DF6BD1C002F85C9 /* SwiftSoup */,
 			);
 			productName = NetNewsWire;
 			productReference = 849C64601ED37A5D003D8FC0 /* NetNewsWire.app */;
@@ -1010,6 +1018,7 @@
 				17192AD82567B3D500AAEACA /* XCRemoteSwiftPackageReference "Sparkle-Binary" */,
 				519CA8E325841DB700EB079A /* XCRemoteSwiftPackageReference "plcrashreporter" */,
 				179D280926F6F93D003B2E0A /* XCRemoteSwiftPackageReference "Zip" */,
+				9AE8F1432DF6BD1C002F85C9 /* XCLocalSwiftPackageReference "Modules/SwiftSoup" */,
 			);
 			preferredProjectObjectVersion = 46;
 			productRefGroup = 849C64611ED37A5D003D8FC0 /* Products */;
@@ -1641,6 +1650,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		9AE8F1432DF6BD1C002F85C9 /* XCLocalSwiftPackageReference "Modules/SwiftSoup" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Modules/SwiftSoup;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		17192AD82567B3D500AAEACA /* XCRemoteSwiftPackageReference "Sparkle-Binary" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -1828,6 +1844,14 @@
 		9AA9F07A2DF4A31E00A79211 /* ArticleExtractor */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ArticleExtractor;
+		};
+		9AE8F1402DF6AA0B002F85C9 /* SwiftSoup */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SwiftSoup;
+		};
+		9AE8F1442DF6BD1C002F85C9 /* SwiftSoup */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SwiftSoup;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

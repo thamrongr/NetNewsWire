@@ -1245,6 +1245,14 @@ private extension MainWindowController {
 		}
 	}
 
+	func startArticleExtractorTextForCurrentLink() {
+		if let link = currentLink, let extractor = ArticleExtractor(link, skipParsing: true) {
+			extractor.delegate = self
+			extractor.processText()
+			articleExtractor = extractor
+		}
+	}
+	
 	func saveSplitViewState(to state: inout [AnyHashable : Any]) {
 		guard let splitView = splitViewController?.splitView else {
 			return
