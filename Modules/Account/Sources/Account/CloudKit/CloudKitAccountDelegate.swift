@@ -651,11 +651,25 @@ private extension CloudKitAccountDelegate {
 					self.syncProgress.completeTask()
 
 					if let parsedFeed = parsedFeed {
-						account.update(feed, with: parsedFeed) { result in
-							switch result {
-							case .success:
+                                                account.update(feed, with: parsedFeed) { result in
+                                                        switch result {
+                                                        case .success(let changes):
 
-								self.accountZone.createWebFeed(url: bestFeedSpecifier.urlString,
+                                                                let updated = changes.updatedArticles ?? []
+                                                                let newArticles = changes.newArticles ?? []
+                                                                let articles = newArticles.union(updated)
+                                                                for article in articles {
+                                                                        guard article.webFeed?.isArticleExtractorAlwaysOn ?? true else { continue }
+                                                                        guard article.webFeed?.isArticleExtractorTextAlwaysOn ?? true else { continue }
+                                                                        if let operation = ArticleExtractionOperation(article: article,
+                                                                                                                     saveHandler: { [weak account] extracted, id in
+                                                                                                                             account?.saveExtractedArticle(extracted, articleID: id)
+                                                                                                                     }) {
+                                                                                self.articleExtractionQueue.addOperation(operation)
+                                                                        }
+                                                                }
+
+                                                                self.accountZone.createWebFeed(url: bestFeedSpecifier.urlString,
 															   name: parsedFeed.title,
 															   editedName: editedName,
 															   homePageURL: parsedFeed.homePageURL,
@@ -828,6 +842,7 @@ extension CloudKitAccountDelegate: LocalAccountRefresherDelegate {
 			let articles = newArticle.union(updated)
                for article in articles {
                        guard article.webFeed?.isArticleExtractorAlwaysOn ?? true else { continue }
+                       guard article.webFeed?.isArticleExtractorTextAlwaysOn ?? true else { continue }
 						if let operation = ArticleExtractionOperation(article: article,
 						   saveHandler: { [weak account] extracted, id in
 							   account?.saveExtractedArticle(extracted, articleID: id)

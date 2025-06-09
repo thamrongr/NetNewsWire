@@ -159,14 +159,23 @@ public final class WebFeed: Feed, Renamable, Hashable {
 		}
 	}
 	
-	public var isArticleExtractorAlwaysOn: Bool? {
-		get {
+        public var isArticleExtractorAlwaysOn: Bool? {
+                get {
             metadata.isArticleExtractorAlwaysOn
-		}
-		set {
-			metadata.isArticleExtractorAlwaysOn = newValue
-		}
-	}
+                }
+                set {
+                        metadata.isArticleExtractorAlwaysOn = newValue
+                }
+        }
+
+       public var isArticleExtractorTextAlwaysOn: Bool? {
+               get {
+                       metadata.isArticleExtractorTextAlwaysOn
+               }
+               set {
+                       metadata.isArticleExtractorTextAlwaysOn = newValue
+               }
+       }
 	
 	public var externalID: String? {
 		get {
