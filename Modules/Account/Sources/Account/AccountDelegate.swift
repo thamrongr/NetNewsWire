@@ -21,7 +21,8 @@ protocol AccountDelegate {
 	var credentials: Credentials? { get set }
 	var accountMetadata: AccountMetadata? { get set }
 	
-	var refreshProgress: DownloadProgress { get }
+        var refreshProgress: DownloadProgress { get }
+       var articleExtractionProgress: DownloadProgress { get }
 
 	func receiveRemoteNotification(for account: Account, userInfo: [AnyHashable : Any], completion: @escaping () -> Void)
 

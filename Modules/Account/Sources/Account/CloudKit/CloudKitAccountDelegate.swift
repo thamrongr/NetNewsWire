@@ -61,8 +61,9 @@ final class CloudKitAccountDelegate: AccountDelegate {
 	var accountMetadata: AccountMetadata?
 
 	/// refreshProgress is combined sync progress and feed download progress.
-	let refreshProgress = DownloadProgress(numberOfTasks: 0)
-	private let syncProgress = DownloadProgress(numberOfTasks: 0)
+        let refreshProgress = DownloadProgress(numberOfTasks: 0)
+        private let syncProgress = DownloadProgress(numberOfTasks: 0)
+       var articleExtractionProgress = DownloadProgress(numberOfTasks: 0)
 
 	init(dataFolder: String) {
 
@@ -659,13 +660,13 @@ private extension CloudKitAccountDelegate {
                                                                 let newArticles = changes.newArticles ?? []
                                                                 let articles = newArticles.union(updated)
                                                                 for article in articles {
-                                                                        if let operation = ArticleExtractionOperation(article: article,
-                                                                                                                     saveHandler: { [weak account] extracted, id in
-                                                                                                                             account?.saveExtractedArticle(extracted, articleID: id)
-                                                                                                                     }) {
-                                                                                self.articleExtractionQueue.addOperation(operation)
-                                                                        }
-                                                                }
+            if let operation = ArticleExtractionOperation(article: article, progress: self.articleExtractionProgress, saveHandler: { [weak account] extracted, id in
+                account?.saveExtractedArticle(extracted, articleID: id)
+            }) {
+                self.articleExtractionProgress.addToNumberOfTasksAndRemaining(1)
+                self.articleExtractionQueue.addOperation(operation)
+            }
+        }
 
                                                                 self.accountZone.createWebFeed(url: bestFeedSpecifier.urlString,
 															   name: parsedFeed.title,
@@ -839,12 +840,12 @@ extension CloudKitAccountDelegate: LocalAccountRefresherDelegate {
 			let newArticle = articleChanges.newArticles ?? []
 			let articles = newArticle.union(updated)
                for article in articles {
-						if let operation = ArticleExtractionOperation(article: article,
-						   saveHandler: { [weak account] extracted, id in
-							   account?.saveExtractedArticle(extracted, articleID: id)
-						   }) {
-						   articleExtractionQueue.addOperation(operation)
-						}
-               }
+            if let operation = ArticleExtractionOperation(article: article, progress: articleExtractionProgress, saveHandler: { [weak account] extracted, id in
+                account?.saveExtractedArticle(extracted, articleID: id)
+            }) {
+                articleExtractionProgress.addToNumberOfTasksAndRemaining(1)
+                articleExtractionQueue.addOperation(operation)
+            }
+        }
         }
 }

@@ -89,7 +89,8 @@ public final class AccountManager: UnreadCountProvider {
 		return false
 	}
 
-	public let combinedRefreshProgress = CombinedRefreshProgress()
+        public let combinedRefreshProgress = CombinedRefreshProgress()
+       public let combinedArticleExtractionProgress = CombinedArticleExtractionProgress()
 
 	public init(accountsFolder: String) {
 		self.accountsFolder = accountsFolder
