@@ -27,9 +27,11 @@ final class LocalAccountDelegate: AccountDelegate {
 
 	weak var account: Account?
 	
-	lazy var refreshProgress: DownloadProgress = {
-		refresher.downloadProgress
-	}()
+        lazy var refreshProgress: DownloadProgress = {
+                refresher.downloadProgress
+        }()
+
+       var articleExtractionProgress = DownloadProgress(numberOfTasks: 0)
 
 	let behaviors: AccountBehaviors = []
 	let isOPMLImportInProgress = false
@@ -230,12 +232,14 @@ extension LocalAccountDelegate: LocalAccountRefresherDelegate {
 			let newArticle = articleChanges.newArticles ?? []
 			let articles = newArticle.union(updated)
                for article in articles {
-                                          if let operation = ArticleExtractionOperation(article: article,
-                                                  saveHandler: { [weak account] extracted, id in
-                                                       account?.saveExtractedArticle(extracted, articleID: id)
-                                                  }) {
-						   articleExtractionQueue.addOperation(operation)
-					   }
+                       if let operation = ArticleExtractionOperation(article: article,
+                                                                progress: articleExtractionProgress,
+                                                                saveHandler: { [weak account] extracted, id in
+                                                                       account?.saveExtractedArticle(extracted, articleID: id)
+                                                                }) {
+                               articleExtractionProgress.addToNumberOfTasksAndRemaining(1)
+                               articleExtractionQueue.addOperation(operation)
+                       }
                }
        }
 }
@@ -279,14 +283,14 @@ private extension LocalAccountDelegate {
 								let updated = changes.updatedArticles ?? []
 								let newArticles = changes.newArticles ?? []
 								let articles = newArticles.union(updated)
-								for article in articles {
-										if let operation = ArticleExtractionOperation(article: article,
-															 saveHandler: { [weak account] extracted, id in
-																 account?.saveExtractedArticle(extracted, articleID: id)
-															 }) {
-											self.articleExtractionQueue.addOperation(operation)
-										}
-								}
+                                                                for article in articles {
+                                                                    if let operation = ArticleExtractionOperation(article: article, progress: self.articleExtractionProgress, saveHandler: { [weak account] extracted, id in
+                                                                        account?.saveExtractedArticle(extracted, articleID: id)
+                                                                    }) {
+                                                                        self.articleExtractionProgress.addToNumberOfTasksAndRemaining(1)
+                                                                        self.articleExtractionQueue.addOperation(operation)
+                                                                    }
+                                                                }
 								completion(.success(feed))
 							case .failure(let error):
 								completion(.failure(error))

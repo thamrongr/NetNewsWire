@@ -99,38 +99,43 @@ private extension SidebarStatusBarView {
 
 	func updateProgressIndicator() {
 
-		let progress = AccountManager.shared.combinedRefreshProgress
+                let refresh = AccountManager.shared.combinedRefreshProgress
+                let extraction = AccountManager.shared.combinedArticleExtractionProgress
 
-		if progress.isComplete {
-			stopProgressIfNeeded()
-			return
-		}
+                let totalTasks = refresh.numberOfTasks + extraction.numberOfTasks
+                let totalCompleted = refresh.numberCompleted + extraction.numberCompleted
 
-		startProgressIfNeeded()
+                if totalTasks == 0 {
+                        stopProgressIfNeeded()
+                        return
+                }
 
-		let maxValue = Double(progress.numberOfTasks)
-		if progressIndicator.maxValue != maxValue {
-			progressIndicator.maxValue = maxValue
-		}
+                startProgressIfNeeded()
 
-		let doubleValue = Double(progress.numberCompleted)
-		if progressIndicator.doubleValue != doubleValue {
-			progressIndicator.doubleValue = doubleValue
-		}
-	}
+                if progressIndicator.maxValue != Double(totalTasks) {
+                        progressIndicator.maxValue = Double(totalTasks)
+                }
+                if progressIndicator.doubleValue != Double(totalCompleted) {
+                        progressIndicator.doubleValue = Double(totalCompleted)
+                }
+        }
 
-	func updateProgressLabel() {
+        func updateProgressLabel() {
 
-		let progress = AccountManager.shared.combinedRefreshProgress
+                let refresh = AccountManager.shared.combinedRefreshProgress
+                let extraction = AccountManager.shared.combinedArticleExtractionProgress
 
-		if progress.isComplete {
-			progressLabel.stringValue = ""
-			return
-		}
+                let totalTasks = refresh.numberOfTasks + extraction.numberOfTasks
+                let totalCompleted = refresh.numberCompleted + extraction.numberCompleted
 
-		let formatString = NSLocalizedString("%@ of %@", comment: "Status bar progress")
-		let s = String(format: formatString, NSNumber(value: progress.numberCompleted), NSNumber(value: progress.numberOfTasks))
+                if totalTasks == 0 {
+                        progressLabel.stringValue = ""
+                        return
+                }
 
-		progressLabel.stringValue = s
-	}
+                let formatString = NSLocalizedString("%@ of %@", comment: "Status bar progress")
+                let s = String(format: formatString, NSNumber(value: totalCompleted), NSNumber(value: totalTasks))
+
+                progressLabel.stringValue = s
+        }
 }

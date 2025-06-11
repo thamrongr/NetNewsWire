@@ -43,7 +43,8 @@ final class FeedbinAccountDelegate: AccountDelegate {
 		}
 	}
 	
-	var refreshProgress = DownloadProgress(numberOfTasks: 0)
+        var refreshProgress = DownloadProgress(numberOfTasks: 0)
+       var articleExtractionProgress = DownloadProgress(numberOfTasks: 0)
 
 	init(dataFolder: String, transport: Transport?) {
 		

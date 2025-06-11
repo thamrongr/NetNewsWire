@@ -254,9 +254,13 @@ public final class Account: DisplayNameProvider, UnreadCountProvider, Container,
 		}
 	}
 
-	var refreshProgress: DownloadProgress {
-		return delegate.refreshProgress
-	}
+        var refreshProgress: DownloadProgress {
+                return delegate.refreshProgress
+        }
+
+       var articleExtractionProgress: DownloadProgress {
+               return delegate.articleExtractionProgress
+       }
 
 	init(dataFolder: String, type: AccountType, accountID: String, transport: Transport? = nil) {
 		switch type {

@@ -71,7 +71,8 @@ final class ReaderAPIAccountDelegate: AccountDelegate {
 		}
 	}
 
-	var refreshProgress = DownloadProgress(numberOfTasks: 0)
+        var refreshProgress = DownloadProgress(numberOfTasks: 0)
+       var articleExtractionProgress = DownloadProgress(numberOfTasks: 0)
 	
 	init(dataFolder: String, transport: Transport?, variant: ReaderAPIVariant) {
 		let databaseFilePath = (dataFolder as NSString).appendingPathComponent("Sync.sqlite3")

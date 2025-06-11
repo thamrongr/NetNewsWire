@@ -27,8 +27,9 @@ final class NewsBlurAccountDelegate: AccountDelegate {
 		}
 	}
 
-	var accountMetadata: AccountMetadata? = nil
-	var refreshProgress = DownloadProgress(numberOfTasks: 0)
+        var accountMetadata: AccountMetadata? = nil
+        var refreshProgress = DownloadProgress(numberOfTasks: 0)
+       var articleExtractionProgress = DownloadProgress(numberOfTasks: 0)
 
 	let caller: NewsBlurAPICaller
 	let log = OSLog(subsystem: Bundle.main.bundleIdentifier!, category: "NewsBlur")

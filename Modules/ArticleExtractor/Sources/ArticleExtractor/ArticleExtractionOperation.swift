@@ -1,10 +1,12 @@
 import Foundation
 import Articles
+import RSWeb
 
 public final class ArticleExtractionOperation: Operation, ArticleExtractorDelegate {
     private var extractor: ArticleExtractor?
     private let article: Article
-	private let saveHandler: (ExtractedArticle, String) -> Void
+    private let progress: DownloadProgress?
+    private let saveHandler: (ExtractedArticle, String) -> Void
 
     private var _isExecuting = false
     private var _isFinished = false
@@ -27,11 +29,12 @@ public final class ArticleExtractionOperation: Operation, ArticleExtractorDelega
         }
     }
 
-	public init?(article: Article, saveHandler: @escaping (ExtractedArticle, String) -> Void) {
-		guard let link = article.linkForExtraction, let extractor = ArticleExtractor(link,skipParsing: true) else { return nil }
+    public init?(article: Article, progress: DownloadProgress? = nil, saveHandler: @escaping (ExtractedArticle, String) -> Void) {
+        guard let link = article.linkForExtraction, let extractor = ArticleExtractor(link,skipParsing: true) else { return nil }
         self.article = article
         self.extractor = extractor
-		self.saveHandler = saveHandler
+        self.progress = progress
+        self.saveHandler = saveHandler
         super.init()
     }
 
@@ -57,7 +60,10 @@ public final class ArticleExtractionOperation: Operation, ArticleExtractorDelega
 
     private func finish() {
         if isExecuting { isExecuting = false }
-        if !isFinished { isFinished = true }
+        if !isFinished {
+            isFinished = true
+            progress?.completeTask()
+        }
     }
 
     // MARK: ArticleExtractorDelegate

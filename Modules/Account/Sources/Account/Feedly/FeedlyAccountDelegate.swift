@@ -53,7 +53,8 @@ final class FeedlyAccountDelegate: AccountDelegate {
 	
 	var accountMetadata: AccountMetadata?
 	
-	var refreshProgress = DownloadProgress(numberOfTasks: 0)
+        var refreshProgress = DownloadProgress(numberOfTasks: 0)
+       var articleExtractionProgress = DownloadProgress(numberOfTasks: 0)
 	
 	/// Set on `accountDidInitialize` for the purposes of refreshing OAuth tokens when they expire.
 	/// See the implementation for `FeedlyAPICallerDelegate`.
