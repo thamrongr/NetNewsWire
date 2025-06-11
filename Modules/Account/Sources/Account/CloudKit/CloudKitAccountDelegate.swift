@@ -659,8 +659,6 @@ private extension CloudKitAccountDelegate {
                                                                 let newArticles = changes.newArticles ?? []
                                                                 let articles = newArticles.union(updated)
                                                                 for article in articles {
-                                                                        guard article.webFeed?.isArticleExtractorAlwaysOn ?? true else { continue }
-                                                                        guard article.webFeed?.isArticleExtractorTextAlwaysOn ?? true else { continue }
                                                                         if let operation = ArticleExtractionOperation(article: article,
                                                                                                                      saveHandler: { [weak account] extracted, id in
                                                                                                                              account?.saveExtractedArticle(extracted, articleID: id)
@@ -841,8 +839,6 @@ extension CloudKitAccountDelegate: LocalAccountRefresherDelegate {
 			let newArticle = articleChanges.newArticles ?? []
 			let articles = newArticle.union(updated)
                for article in articles {
-                       guard article.webFeed?.isArticleExtractorAlwaysOn ?? true else { continue }
-                       guard article.webFeed?.isArticleExtractorTextAlwaysOn ?? true else { continue }
 						if let operation = ArticleExtractionOperation(article: article,
 						   saveHandler: { [weak account] extracted, id in
 							   account?.saveExtractedArticle(extracted, articleID: id)

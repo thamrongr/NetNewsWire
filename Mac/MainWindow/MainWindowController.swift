@@ -753,12 +753,13 @@ extension MainWindowController: ArticleExtractorDelegate {
 	
         func articleExtractionDidComplete(extractedArticle: ExtractedArticle) {
                 if let article = oneSelectedArticle, articleExtractor?.state != .cancelled {
-                        if let account = AccountManager.shared.existingAccount(with: article.accountID) {
-                                account.saveExtractedArticle(extractedArticle, articleID: article.articleID)
-                        }
                         isShowingExtractedArticle = true
                         if articleExtractorIsText {
-                                isShowingExtractedArticleText = true
+							isShowingExtractedArticleText = true
+							//do not save reader-mode, only Extracted Text save to ExtractedArticle
+							if let account = AccountManager.shared.existingAccount(with: article.accountID) {
+									account.saveExtractedArticle(extractedArticle, articleID: article.articleID)
+							}
                         }
                         let detailState = DetailState.extracted(article, extractedArticle, restoreArticleWindowScrollY)
                         restoreArticleWindowScrollY = nil

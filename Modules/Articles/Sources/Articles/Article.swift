@@ -127,5 +127,7 @@ public extension Article {
 
 		return result
 	}
-
+	var linkForExtraction: String? {
+		return rawLink ?? rawExternalLink ?? uniqueID
+	}
 }

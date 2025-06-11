@@ -28,7 +28,7 @@ public final class ArticleExtractionOperation: Operation, ArticleExtractorDelega
     }
 
 	public init?(article: Article, saveHandler: @escaping (ExtractedArticle, String) -> Void) {
-		guard let link = article.rawLink, let extractor = ArticleExtractor(link,skipParsing: true) else { return nil }
+		guard let link = article.linkForExtraction, let extractor = ArticleExtractor(link,skipParsing: true) else { return nil }
         self.article = article
         self.extractor = extractor
 		self.saveHandler = saveHandler

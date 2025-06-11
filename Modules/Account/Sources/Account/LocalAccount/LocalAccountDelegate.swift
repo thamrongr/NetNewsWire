@@ -230,8 +230,6 @@ extension LocalAccountDelegate: LocalAccountRefresherDelegate {
 			let newArticle = articleChanges.newArticles ?? []
 			let articles = newArticle.union(updated)
                for article in articles {
-                       guard article.webFeed?.isArticleExtractorAlwaysOn ?? true else { continue }
-                       guard article.webFeed?.isArticleExtractorTextAlwaysOn ?? true else { continue }
                                           if let operation = ArticleExtractionOperation(article: article,
                                                   saveHandler: { [weak account] extracted, id in
                                                        account?.saveExtractedArticle(extracted, articleID: id)
@@ -274,32 +272,30 @@ private extension LocalAccountDelegate {
 						feed.editedName = editedName
 						container.addWebFeed(feed)
 
-                                                account.update(feed, with: parsedFeed) { result in
-                                                        BatchUpdate.shared.end()
-                                                        switch result {
-                                                        case .success(let changes):
-                                                                let updated = changes.updatedArticles ?? []
-                                                                let newArticles = changes.newArticles ?? []
-                                                                let articles = newArticles.union(updated)
-                                                                for article in articles {
-                                                                        guard article.webFeed?.isArticleExtractorAlwaysOn ?? true else { continue }
-                                                                        guard article.webFeed?.isArticleExtractorTextAlwaysOn ?? true else { continue }
-                                                                        if let operation = ArticleExtractionOperation(article: article,
-                                                                                                                     saveHandler: { [weak account] extracted, id in
-                                                                                                                             account?.saveExtractedArticle(extracted, articleID: id)
-                                                                                                                     }) {
-                                                                                self.articleExtractionQueue.addOperation(operation)
-                                                                        }
-                                                                }
-                                                                completion(.success(feed))
-                                                        case .failure(let error):
-                                                                completion(.failure(error))
-                                                        }
-                                                }
-                                        } else {
-                                                BatchUpdate.shared.end()
-                                                completion(.failure(AccountError.createErrorNotFound))
-                                        }
+						account.update(feed, with: parsedFeed) { result in
+							BatchUpdate.shared.end()
+							switch result {
+							case .success(let changes):
+								let updated = changes.updatedArticles ?? []
+								let newArticles = changes.newArticles ?? []
+								let articles = newArticles.union(updated)
+								for article in articles {
+										if let operation = ArticleExtractionOperation(article: article,
+															 saveHandler: { [weak account] extracted, id in
+																 account?.saveExtractedArticle(extracted, articleID: id)
+															 }) {
+											self.articleExtractionQueue.addOperation(operation)
+										}
+								}
+								completion(.success(feed))
+							case .failure(let error):
+								completion(.failure(error))
+							}
+						}
+					} else {
+						BatchUpdate.shared.end()
+						completion(.failure(AccountError.createErrorNotFound))
+					}
 				}
 				
 			case .failure:
