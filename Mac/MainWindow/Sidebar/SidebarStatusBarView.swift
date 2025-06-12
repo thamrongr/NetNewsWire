@@ -35,6 +35,7 @@ final class SidebarStatusBarView: NSView {
 		progressLabel.stringValue = ""		
 		
 		NotificationCenter.default.addObserver(self, selector: #selector(progressDidChange(_:)), name: .combinedRefreshProgressDidChange, object: nil)
+		NotificationCenter.default.addObserver(self, selector: #selector(progressDidChange(_:)), name: .combinedArticleExtractionProgressDidChange, object: nil)
 	}
 
 	@objc func updateUI() {
@@ -105,7 +106,7 @@ private extension SidebarStatusBarView {
                 let totalTasks = refresh.numberOfTasks + extraction.numberOfTasks
                 let totalCompleted = refresh.numberCompleted + extraction.numberCompleted
 
-                if totalTasks == 0 {
+				if totalTasks == 0 || totalCompleted >= totalTasks {
                         stopProgressIfNeeded()
                         return
                 }
@@ -128,7 +129,7 @@ private extension SidebarStatusBarView {
                 let totalTasks = refresh.numberOfTasks + extraction.numberOfTasks
                 let totalCompleted = refresh.numberCompleted + extraction.numberCompleted
 
-                if totalTasks == 0 {
+                if totalTasks == 0 || totalCompleted >= totalTasks {
                         progressLabel.stringValue = ""
                         return
                 }

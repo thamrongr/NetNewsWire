@@ -16,6 +16,7 @@ let package = Package(
 		.package(path: "../Articles"),
 		.package(path: "../RSParser"),
 		.package(path: "../SwiftSoup"),
+		.package(path: "../RSWeb"),
 	],
 	targets: [
 		.target(
@@ -24,6 +25,7 @@ let package = Package(
 				"Articles",
 				"RSParser",
 				"SwiftSoup",
+				"RSWeb",
 			]),
 	]
 )
