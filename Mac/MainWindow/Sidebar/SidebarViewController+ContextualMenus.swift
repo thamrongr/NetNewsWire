@@ -11,6 +11,7 @@ import Articles
 import Account
 import RSCore
 import UserNotifications
+import UniformTypeIdentifiers
 
 extension Notification.Name {
 	public static let DidUpdateFeedPreferencesFromContextMenu = Notification.Name(rawValue: "DidUpdateFeedPreferencesFromContextMenu")
@@ -74,6 +75,63 @@ extension SidebarViewController {
 			return
 		}
 		runCommand(markReadCommand)
+	}
+	
+	@objc func shareAllUnreadAsReadFromContextualMenu(_ sender: Any?) {
+
+			guard let menuItem = sender as? NSMenuItem,
+				  let smartFeed = menuItem.representedObject as? PseudoFeed,
+				  let unreadFeed = smartFeed as? UnreadFeed else {
+					return
+			}
+
+			guard let articlesSet = try? unreadFeed.fetchUnreadArticles() else {
+					return
+			}
+
+			let articles = Array(articlesSet).sortedByDate(.orderedAscending)
+			let text = articles.reduce(into: "") { partial, article in
+					if let title = article.title {
+							partial += "\(title)\n\n"
+					}
+					if let content = article.extractedArticle?.content {
+							partial += content.convertingToPlainText()
+					} else if let html = article.contentHTML {
+							partial += html.convertingToPlainText()
+					} else if let contentText = article.contentText {
+							partial += contentText
+					}
+					partial += "\n\n"
+			}
+
+			let alert = NSAlert()
+			alert.messageText = NSLocalizedString("Share or Save", comment: "Share or Save")
+			alert.informativeText = NSLocalizedString("Do you want to share or save all unread articles?", comment: "Share or Save")
+			alert.addButton(withTitle: NSLocalizedString("Share", comment: "Share"))
+			alert.addButton(withTitle: NSLocalizedString("Save…", comment: "Save"))
+			alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "Cancel"))
+			let response = alert.runModal()
+
+			if response == .alertFirstButtonReturn {
+					let picker = NSSharingServicePicker(items: [text])
+					picker.show(relativeTo: view.bounds, of: view, preferredEdge: .minY)
+			} else if response == .alertSecondButtonReturn {
+					let panel = NSSavePanel()
+					panel.allowedContentTypes = [UTType.plainText]
+					panel.nameFieldStringValue = "AllUnread.txt"
+					panel.beginSheetModal(for: view.window!) { result in
+							if result == .OK, let url = panel.url {
+									try? text.write(to: url, atomically: true, encoding: .utf8)
+							}
+					}
+			} else {
+					return
+			}
+
+			guard let undoManager = undoManager, let markReadCommand = MarkStatusCommand(initialArticles: articles, markingRead: true, undoManager: undoManager) else {
+					return
+			}
+			runCommand(markReadCommand)
 	}
 
 	@objc func deleteFromContextualMenu(_ sender: Any?) {
@@ -299,6 +357,9 @@ private extension SidebarViewController {
 
 		if smartFeed.unreadCount > 0 {
 			menu.addItem(markAllReadMenuItem([smartFeed]))
+			if smartFeed is UnreadFeed {
+					menu.addItem(shareAllUnreadMenuItem(smartFeed))
+			}
 		}
 		return menu.numberOfItems > 0 ? menu : nil
 	}
@@ -323,7 +384,11 @@ private extension SidebarViewController {
 
 		return menuItem(NSLocalizedString("Mark All as Read", comment: "Command"), #selector(markObjectsReadFromContextualMenu(_:)), objects)
 	}
-
+	
+	func shareAllUnreadMenuItem(_ object: Any) -> NSMenuItem {
+			return menuItem(NSLocalizedString("Share All as Read", comment: "Command"), #selector(shareAllUnreadAsReadFromContextualMenu(_:)), object)
+	}
+	
 	func deleteMenuItem(_ objects: [Any]) -> NSMenuItem {
 
 		return menuItem(NSLocalizedString("Delete", comment: "Command"), #selector(deleteFromContextualMenu(_:)), objects)
