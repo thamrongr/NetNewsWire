@@ -244,9 +244,13 @@ class MainWindowController : NSWindowController, NSUserInterfaceValidations {
 			return canMarkBelowArticlesAsRead()
 		}
 
-		if item.action == #selector(toggleArticleExtractor(_:)) {
-			return validateToggleArticleExtractor(item)
-		}
+                if item.action == #selector(toggleArticleExtractor(_:)) {
+                        return validateToggleArticleExtractor(item)
+                }
+
+                if item.action == #selector(toggleArticleExtractorText(_:)) {
+                        return validateToggleArticleExtractorText(item)
+                }
 		
 		if item.action == #selector(toolbarShowShareMenu(_:)) {
 			return canShowShareMenu()
@@ -642,11 +646,7 @@ extension MainWindowController: TimelineContainerViewControllerDelegate {
                 if let articles = articles {
                         if articles.count == 1, let article = articles.first {
                                 activityManager.reading(feed: nil, article: article)
-                                if let extracted = article.extractedArticle {
-                                        isShowingExtractedArticle = true
-                                        detailState = .extracted(article, extracted, restoreArticleWindowScrollY)
-                                        restoreArticleWindowScrollY = nil
-                                } else if article.webFeed?.isArticleExtractorAlwaysOn ?? false {
+                                if article.webFeed?.isArticleExtractorAlwaysOn ?? false {
                                         detailState = .loading
                                         startArticleExtractorForCurrentLink()
                                 } else if article.webFeed?.isArticleExtractorTextAlwaysOn ?? false {
@@ -805,8 +805,9 @@ extension NSToolbarItem.Identifier {
 	static let nextUnread = NSToolbarItem.Identifier("nextUnread")
 	static let markRead = NSToolbarItem.Identifier("markRead")
 	static let markStar = NSToolbarItem.Identifier("markStar")
-	static let readerView = NSToolbarItem.Identifier("readerView")
-	static let openInBrowser = NSToolbarItem.Identifier("openInBrowser")
+        static let readerView = NSToolbarItem.Identifier("readerView")
+        static let textView = NSToolbarItem.Identifier("textView")
+        static let openInBrowser = NSToolbarItem.Identifier("openInBrowser")
 	static let share = NSToolbarItem.Identifier("share")
 	static let articleThemeMenu = NSToolbarItem.Identifier("articleThemeMenu")
 	static let cleanUp = NSToolbarItem.Identifier("cleanUp")
@@ -854,16 +855,27 @@ extension MainWindowController: NSToolbarDelegate {
 			let title = NSLocalizedString("Next Unread", comment: "Next Unread")
 			return buildToolbarButton(.nextUnread, title, AppAssets.nextUnreadImage, "nextUnread:")
 
-		case .readerView:
-			let toolbarItem = RSToolbarItem(itemIdentifier: .readerView)
-			toolbarItem.autovalidates = true
-			let description = NSLocalizedString("Reader View", comment: "Reader View")
-			toolbarItem.toolTip = description
-			toolbarItem.label = description
-			let button = ArticleExtractorButton()
-			button.action = #selector(toggleArticleExtractor(_:))
-			toolbarItem.view = button
-			return toolbarItem
+                case .readerView:
+                        let toolbarItem = RSToolbarItem(itemIdentifier: .readerView)
+                        toolbarItem.autovalidates = true
+                        let description = NSLocalizedString("Reader View", comment: "Reader View")
+                        toolbarItem.toolTip = description
+                        toolbarItem.label = description
+                        let button = ArticleExtractorButton()
+                        button.action = #selector(toggleArticleExtractor(_:))
+                        toolbarItem.view = button
+                        return toolbarItem
+
+                case .textView:
+                        let toolbarItem = RSToolbarItem(itemIdentifier: .textView)
+                        toolbarItem.autovalidates = true
+                        let description = NSLocalizedString("Text View", comment: "Text View")
+                        toolbarItem.toolTip = description
+                        toolbarItem.label = description
+                        let button = ArticleExtractorTextButton()
+                        button.action = #selector(toggleArticleExtractorText(_:))
+                        toolbarItem.view = button
+                        return toolbarItem
 
 		case .share:
 			let title = NSLocalizedString("Share", comment: "Share")
@@ -910,10 +922,11 @@ extension MainWindowController: NSToolbarDelegate {
 			.flexibleSpace,
 			.nextUnread,
 			.markRead,
-			.markStar,
-			.readerView,
-			.openInBrowser,
-			.share,
+                        .markStar,
+                        .readerView,
+                        .textView,
+                        .openInBrowser,
+                        .share,
 			.articleThemeMenu,
 			.search,
 			.cleanUp
@@ -931,11 +944,12 @@ extension MainWindowController: NSToolbarDelegate {
 			.toggleReadArticlesFilter,
 			.timelineTrackingSeparator,
 			.markRead,
-			.markStar,
-			.nextUnread,
-			.readerView,
-			.share,
-			.openInBrowser,
+                        .markStar,
+                        .nextUnread,
+                        .readerView,
+                        .textView,
+                        .share,
+                        .openInBrowser,
 			.flexibleSpace,
 			.search
 		]
@@ -1106,10 +1120,10 @@ private extension MainWindowController {
 		return result
 	}
 
-	func validateToggleArticleExtractor(_ item: NSValidatedUserInterfaceItem) -> Bool {
-		guard !AppDefaults.shared.isDeveloperBuild else {
-			return false
-		}
+        func validateToggleArticleExtractor(_ item: NSValidatedUserInterfaceItem) -> Bool {
+                guard !AppDefaults.shared.isDeveloperBuild else {
+                        return false
+                }
 
 		guard let toolbarItem = item as? NSToolbarItem, let toolbarButton = toolbarItem.view as? ArticleExtractorButton else {
 			if let menuItem = item as? NSMenuItem {
@@ -1136,8 +1150,41 @@ private extension MainWindowController {
 			toolbarButton.buttonState = isShowingExtractedArticle ? .on : .off
 		}
 
-		return true
-	}
+                return true
+        }
+
+        func validateToggleArticleExtractorText(_ item: NSValidatedUserInterfaceItem) -> Bool {
+                guard !AppDefaults.shared.isDeveloperBuild else {
+                        return false
+                }
+
+                guard let toolbarItem = item as? NSToolbarItem, let toolbarButton = toolbarItem.view as? ArticleExtractorTextButton else {
+                        if let menuItem = item as? NSMenuItem {
+                                menuItem.state = isShowingExtractedArticleText ? .on : .off
+                        }
+                        return currentLink != nil
+                }
+
+                if currentTimelineViewController?.selectedArticles.first?.webFeed != nil {
+                        toolbarButton.isEnabled = true
+                }
+
+                guard let state = articleExtractor?.state else {
+                        toolbarButton.buttonState = .off
+                        return currentLink != nil
+                }
+
+                switch state {
+                case .processing:
+                        toolbarButton.buttonState = .animated
+                case .failedToParse:
+                        toolbarButton.buttonState = .error
+                case .ready, .cancelled, .complete:
+                        toolbarButton.buttonState = isShowingExtractedArticleText ? .on : .off
+                }
+
+                return true
+        }
 
 	func canMarkAboveArticlesAsRead() -> Bool {
 		return currentTimelineViewController?.canMarkAboveArticlesAsRead() ?? false
