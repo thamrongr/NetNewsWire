@@ -8,7 +8,7 @@
 
 import AppKit
 
-enum ArticleExtractorButtonState {
+enum ArticleExtractorTextButtonState {
 	case error
 	case animated
 	case on
@@ -19,7 +19,7 @@ class ArticleExtractorTextButton: NSButton {
 	
 	private var animatedLayer: CALayer?
 	
-	var buttonState: ArticleExtractorButtonState = .off {
+	var buttonState: ArticleExtractorTextButtonState = .off {
 		didSet {
 			if buttonState != oldValue {
 				switch buttonState {

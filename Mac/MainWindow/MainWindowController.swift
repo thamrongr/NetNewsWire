@@ -244,13 +244,13 @@ class MainWindowController : NSWindowController, NSUserInterfaceValidations {
 			return canMarkBelowArticlesAsRead()
 		}
 
-                if item.action == #selector(toggleArticleExtractor(_:)) {
-                        return validateToggleArticleExtractor(item)
-                }
+		if item.action == #selector(toggleArticleExtractor(_:)) {
+			return validateToggleArticleExtractor(item)
+		}
 
-                if item.action == #selector(toggleArticleExtractorText(_:)) {
-                        return validateToggleArticleExtractorText(item)
-                }
+		if item.action == #selector(toggleArticleExtractorText(_:)) {
+			return validateToggleArticleExtractorText(item)
+		}
 		
 		if item.action == #selector(toolbarShowShareMenu(_:)) {
 			return canShowShareMenu()
@@ -381,7 +381,7 @@ class MainWindowController : NSWindowController, NSUserInterfaceValidations {
 		currentTimelineViewController?.toggleStarredStatusForSelectedArticles()
 	}
 
-        @IBAction func toggleArticleExtractor(_ sender: Any?) {
+	@IBAction func toggleArticleExtractor(_ sender: Any?) {
 		
 		guard let currentLink = currentLink, let article = oneSelectedArticle else {
 			return
@@ -396,80 +396,80 @@ class MainWindowController : NSWindowController, NSUserInterfaceValidations {
 			return
 		}
 		
-                guard articleExtractor?.state != .processing else {
-                        articleExtractor?.cancel()
-                        articleExtractor = nil
-                        articleExtractorIsText = false
-                        isShowingExtractedArticle = false
-                        detailViewController?.setState(DetailState.article(article, nil), mode: timelineSourceMode)
-                        return
-                }
-		
-                guard !isShowingExtractedArticle else {
-                        isShowingExtractedArticle = false
-                        isShowingExtractedArticleText = false
-                        detailViewController?.setState(DetailState.article(article, nil), mode: timelineSourceMode)
-                        return
-                }
-		
-                if let articleExtractor = articleExtractor, let extractedArticle = articleExtractor.article {
-                        if currentLink == articleExtractor.articleLink {
-                                isShowingExtractedArticle = true
-                                if articleExtractorIsText {
-                                        isShowingExtractedArticleText = true
-                                }
-                                let detailState = DetailState.extracted(article, extractedArticle, nil)
-                                detailViewController?.setState(detailState, mode: timelineSourceMode)
-                        }
-                } else {
-                        startArticleExtractorForCurrentLink()
-                }
+		guard articleExtractor?.state != .processing else {
+			articleExtractor?.cancel()
+			articleExtractor = nil
+			articleExtractorIsText = false
+			isShowingExtractedArticle = false
+			detailViewController?.setState(DetailState.article(article, nil), mode: timelineSourceMode)
+			return
+		}
 
-        }
+		guard !isShowingExtractedArticle else {
+			isShowingExtractedArticle = false
+			isShowingExtractedArticleText = false
+			detailViewController?.setState(DetailState.article(article, nil), mode: timelineSourceMode)
+			return
+		}
 
-        @IBAction func toggleArticleExtractorText(_ sender: Any?) {
+		if let articleExtractor = articleExtractor, let extractedArticle = articleExtractor.article {
+			if currentLink == articleExtractor.articleLink {
+				isShowingExtractedArticle = true
+				if articleExtractorIsText {
+					isShowingExtractedArticleText = true
+				}
+				let detailState = DetailState.extracted(article, extractedArticle, nil)
+				detailViewController?.setState(detailState, mode: timelineSourceMode)
+			}
+		} else {
+			startArticleExtractorForCurrentLink()
+		}
 
-                guard let currentLink = currentLink, let article = oneSelectedArticle else {
-                        return
-                }
+	}
 
-                defer {
-                        makeToolbarValidate()
-                }
+	@IBAction func toggleArticleExtractorText(_ sender: Any?) {
 
-                if articleExtractor?.state == .failedToParse {
-                        startArticleExtractorTextForCurrentLink()
-                        return
-                }
+		guard let currentLink = currentLink, let article = oneSelectedArticle else {
+			return
+		}
 
-                guard articleExtractor?.state != .processing else {
-                        articleExtractor?.cancel()
-                        articleExtractor = nil
-                        articleExtractorIsText = false
-                        isShowingExtractedArticleText = false
-                        detailViewController?.setState(DetailState.article(article, nil), mode: timelineSourceMode)
-                        return
-                }
+		defer {
+			makeToolbarValidate()
+		}
 
-                guard !isShowingExtractedArticleText else {
-                        isShowingExtractedArticleText = false
-                        articleExtractorIsText = false
-                        detailViewController?.setState(DetailState.article(article, nil), mode: timelineSourceMode)
-                        return
-                }
+		if articleExtractor?.state == .failedToParse {
+			startArticleExtractorTextForCurrentLink()
+			return
+		}
 
-                if let articleExtractor = articleExtractor, let extractedArticle = articleExtractor.article {
-                        if currentLink == articleExtractor.articleLink {
-                                isShowingExtractedArticleText = true
-                                articleExtractorIsText = true
-                                let detailState = DetailState.extracted(article, extractedArticle, nil)
-                                detailViewController?.setState(detailState, mode: timelineSourceMode)
-                        }
-                } else {
-                        startArticleExtractorTextForCurrentLink()
-                }
+		guard articleExtractor?.state != .processing else {
+			articleExtractor?.cancel()
+			articleExtractor = nil
+			articleExtractorIsText = false
+			isShowingExtractedArticleText = false
+			detailViewController?.setState(DetailState.article(article, nil), mode: timelineSourceMode)
+			return
+		}
 
-        }
+		guard !isShowingExtractedArticleText else {
+			isShowingExtractedArticleText = false
+			articleExtractorIsText = false
+			detailViewController?.setState(DetailState.article(article, nil), mode: timelineSourceMode)
+			return
+		}
+
+		if let articleExtractor = articleExtractor, let extractedArticle = articleExtractor.article {
+			if currentLink == articleExtractor.articleLink {
+				isShowingExtractedArticleText = true
+				articleExtractorIsText = true
+				let detailState = DetailState.extracted(article, extractedArticle, nil)
+				detailViewController?.setState(detailState, mode: timelineSourceMode)
+			}
+		} else {
+			startArticleExtractorTextForCurrentLink()
+		}
+
+	}
 
 	@IBAction func markAllAsReadAndGoToNextUnread(_ sender: Any?) {
 		currentTimelineViewController?.markAllAsRead() {
