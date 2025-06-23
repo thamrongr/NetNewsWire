@@ -90,18 +90,50 @@ extension SidebarViewController {
 			}
 
 			let articles = Array(articlesSet).sortedByDate(.orderedAscending)
-			let text = articles.reduce(into: "") { partial, article in
-					if let title = article.title {
-							partial += "\(title)\n\n"
-					}
-					if let content = article.extractedArticle?.content {
-							partial += content.convertingToPlainText()
-					} else if let html = article.contentHTML {
-							partial += html.convertingToPlainText()
-					} else if let contentText = article.contentText {
-							partial += contentText
-					}
-					partial += "\n\n"
+
+			let shareText = articles.reduce(into: "") { partial, article in
+				if let title = article.title {
+								partial += "\(title)\n\n"
+				}
+				if let content = article.extractedArticle?.content {
+								partial += content.convertingToPlainText()
+				} else if let html = article.contentHTML {
+								partial += html.convertingToPlainText()
+				} else if let contentText = article.contentText {
+								partial += contentText
+				}
+				partial += "\n\n"
+			}
+
+			let saveText = articles.reduce(into: "") { partial, article in
+				if let title = article.title {
+								partial += "\(title)\n\n"
+				}
+				if article.webFeed?.isArticleExtractorTextAlwaysOn ?? false {
+								if let content = article.extractedArticle?.content {
+												partial += content.convertingToPlainText()
+								} else if let html = article.contentHTML {
+												partial += html.convertingToPlainText()
+								} else if let contentText = article.contentText {
+												partial += contentText
+								}
+				} else {
+								if let contentText = article.contentText {
+												partial += contentText
+								} else if let html = article.contentHTML {
+												partial += html.convertingToPlainText()
+								} else if let content = article.extractedArticle?.content {
+												partial += content.convertingToPlainText()
+								}
+				}
+				
+				if let rawLink = article.rawLink {
+								partial += "\(rawLink)"
+				} else if let rawExternalLink = article.rawExternalLink {
+								partial += "\(rawExternalLink)"
+				}
+				
+				partial += "\n\n"
 			}
 
 			let alert = NSAlert()
@@ -113,17 +145,21 @@ extension SidebarViewController {
 			let response = alert.runModal()
 
 			if response == .alertFirstButtonReturn {
-					let picker = NSSharingServicePicker(items: [text])
-					picker.show(relativeTo: view.bounds, of: view, preferredEdge: .minY)
+				let picker = NSSharingServicePicker(items: [shareText])
+				picker.show(relativeTo: view.bounds, of: view, preferredEdge: .minY)
 			} else if response == .alertSecondButtonReturn {
-					let panel = NSSavePanel()
-					panel.allowedContentTypes = [UTType.plainText]
-					panel.nameFieldStringValue = "AllUnread.txt"
-					panel.beginSheetModal(for: view.window!) { result in
-							if result == .OK, let url = panel.url {
-									try? text.write(to: url, atomically: true, encoding: .utf8)
-							}
+				let panel = NSSavePanel()
+				panel.allowedContentTypes = [UTType.plainText]
+				let formatter = DateFormatter()
+				formatter.timeZone = .current
+				formatter.dateFormat = "yyyy-MM-dd"
+				let dateString = formatter.string(from: Date())
+				panel.nameFieldStringValue = "AllUnread_\(dateString).txt"
+				panel.beginSheetModal(for: view.window!) { result in
+					if result == .OK, let url = panel.url {
+						try? saveText.write(to: url, atomically: true, encoding: .utf8)
 					}
+				}
 			} else {
 					return
 			}
