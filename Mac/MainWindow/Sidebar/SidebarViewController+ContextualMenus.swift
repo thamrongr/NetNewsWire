@@ -136,6 +136,7 @@ extension SidebarViewController {
                                 accountSaveText[account] = text
                         }
 
+
 			let alert = NSAlert()
 			alert.messageText = NSLocalizedString("Share or Save", comment: "Share or Save")
 			alert.informativeText = NSLocalizedString("Do you want to share or save all unread articles?", comment: "Share or Save")
