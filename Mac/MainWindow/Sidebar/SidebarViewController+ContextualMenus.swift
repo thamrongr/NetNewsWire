@@ -89,20 +89,52 @@ extension SidebarViewController {
 					return
 			}
 
-			let articles = Array(articlesSet).sortedByDate(.orderedAscending)
-			let text = articles.reduce(into: "") { partial, article in
-					if let title = article.title {
-							partial += "\(title)\n\n"
-					}
-					if let content = article.extractedArticle?.content {
-							partial += content.convertingToPlainText()
-					} else if let html = article.contentHTML {
-							partial += html.convertingToPlainText()
-					} else if let contentText = article.contentText {
-							partial += contentText
-					}
-					partial += "\n\n"
-			}
+                        let articles = Array(articlesSet).sortedByDate(.orderedAscending)
+
+                        let shareText = articles.reduce(into: "") { partial, article in
+                                        if let title = article.title {
+                                                        partial += "\(title)\n\n"
+                                        }
+                                        if let content = article.extractedArticle?.content {
+                                                        partial += content.convertingToPlainText()
+                                        } else if let html = article.contentHTML {
+                                                        partial += html.convertingToPlainText()
+                                        } else if let contentText = article.contentText {
+                                                        partial += contentText
+                                        }
+                                        partial += "\n\n"
+                        }
+
+                        let articlesByAccount = Dictionary(grouping: articles, by: { $0.accountID })
+
+                        var accountSaveText: [Account: String] = [:]
+                        for (accountID, accountArticles) in articlesByAccount {
+                                guard let account = AccountManager.shared.existingAccount(with: accountID) else { continue }
+                                let text = accountArticles.reduce(into: "") { partial, article in
+                                        if let title = article.title {
+                                                partial += "\(title)\n\n"
+                                        }
+                                        if article.webFeed?.isArticleExtractorTextAlwaysOn ?? false {
+                                                if let content = article.extractedArticle?.content {
+                                                        partial += content.convertingToPlainText()
+                                                } else if let html = article.contentHTML {
+                                                        partial += html.convertingToPlainText()
+                                                } else if let contentText = article.contentText {
+                                                        partial += contentText
+                                                }
+                                        } else {
+                                                if let contentText = article.contentText {
+                                                        partial += contentText
+                                                } else if let html = article.contentHTML {
+                                                        partial += html.convertingToPlainText()
+                                                } else if let content = article.extractedArticle?.content {
+                                                        partial += content.convertingToPlainText()
+                                                }
+                                        }
+                                        partial += "\n\n"
+                                }
+                                accountSaveText[account] = text
+                        }
 
 			let alert = NSAlert()
 			alert.messageText = NSLocalizedString("Share or Save", comment: "Share or Save")
@@ -112,21 +144,45 @@ extension SidebarViewController {
 			alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "Cancel"))
 			let response = alert.runModal()
 
-			if response == .alertFirstButtonReturn {
-					let picker = NSSharingServicePicker(items: [text])
-					picker.show(relativeTo: view.bounds, of: view, preferredEdge: .minY)
-			} else if response == .alertSecondButtonReturn {
-					let panel = NSSavePanel()
-					panel.allowedContentTypes = [UTType.plainText]
-					panel.nameFieldStringValue = "AllUnread.txt"
-					panel.beginSheetModal(for: view.window!) { result in
-							if result == .OK, let url = panel.url {
-									try? text.write(to: url, atomically: true, encoding: .utf8)
-							}
-					}
-			} else {
-					return
-			}
+                        if response == .alertFirstButtonReturn {
+                                        let picker = NSSharingServicePicker(items: [shareText])
+                                        picker.show(relativeTo: view.bounds, of: view, preferredEdge: .minY)
+                        } else if response == .alertSecondButtonReturn {
+                                        let formatter = DateFormatter()
+                                        formatter.timeZone = .current
+                                        formatter.dateFormat = "yyyy-MM-dd"
+                                        let dateString = formatter.string(from: Date())
+
+                                        if accountSaveText.count <= 1, let (account, text) = accountSaveText.first {
+                                                let panel = NSSavePanel()
+                                                panel.allowedContentTypes = [UTType.plainText]
+                                                let accountName = account.nameForDisplay.replacingOccurrences(of: " ", with: "").trimmingCharacters(in: .whitespaces)
+                                                panel.nameFieldStringValue = "AllUnread_\(dateString)_\(accountName).txt"
+                                                panel.beginSheetModal(for: view.window!) { result in
+                                                        if result == .OK, let url = panel.url {
+                                                                try? text.write(to: url, atomically: true, encoding: .utf8)
+                                                        }
+                                                }
+                                        } else {
+                                                let panel = NSOpenPanel()
+                                                panel.canChooseDirectories = true
+                                                panel.canChooseFiles = false
+                                                panel.allowsMultipleSelection = false
+                                                panel.prompt = NSLocalizedString("Choose", comment: "Choose")
+                                                panel.title = NSLocalizedString("Choose Folder", comment: "Choose Folder")
+                                                panel.beginSheetModal(for: view.window!) { result in
+                                                        if result == .OK, let directory = panel.url {
+                                                                for (account, text) in accountSaveText {
+                                                                        let accountName = account.nameForDisplay.replacingOccurrences(of: " ", with: "").trimmingCharacters(in: .whitespaces)
+                                                                        let fileURL = directory.appendingPathComponent("AllUnread_\(dateString)_\(accountName).txt")
+                                                                        try? text.write(to: fileURL, atomically: true, encoding: .utf8)
+                                                                }
+                                                        }
+                                                }
+                                        }
+                        } else {
+                                        return
+                        }
 
 			guard let undoManager = undoManager, let markReadCommand = MarkStatusCommand(initialArticles: articles, markingRead: true, undoManager: undoManager) else {
 					return
