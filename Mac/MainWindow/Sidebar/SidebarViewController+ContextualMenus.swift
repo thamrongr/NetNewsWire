@@ -112,8 +112,10 @@ extension SidebarViewController {
                                 guard let account = AccountManager.shared.existingAccount(with: accountID) else { continue }
                                 let text = accountArticles.reduce(into: "") { partial, article in
                                         if let title = article.title {
-                                                partial += "\(title)\n\n"
+                                                partial += "Title: \(title)\n\n"
                                         }
+									
+										partial += "Content : \n\n"
                                         if article.webFeed?.isArticleExtractorTextAlwaysOn ?? false {
                                                 if let content = article.extractedArticle?.content {
                                                         partial += content.convertingToPlainText()
@@ -131,7 +133,16 @@ extension SidebarViewController {
                                                         partial += content.convertingToPlainText()
                                                 }
                                         }
-                                        partial += "\n\n"
+										partial += "\n\nurl: "
+									
+										if let rawLink = article.rawLink {
+											partial += "\(rawLink)"
+										} else if let rawExternalLink = article.rawExternalLink {
+											partial += "\(rawExternalLink)"
+										}
+										
+										partial += "\n\n\n\n"
+									
                                 }
                                 accountSaveText[account] = text
                         }
