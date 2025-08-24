@@ -1425,13 +1425,18 @@ private extension MainWindowController {
 		newWebFeedItem.action = Selector(("showAddWebFeedWindow:"))
 		menu.addItem(newWebFeedItem)
 		
-		let newFolderFeedItem = NSMenuItem()
-		newFolderFeedItem.title = NSLocalizedString("New Folder…", comment: "New Folder")
-		newFolderFeedItem.action = Selector(("showAddFolderWindow:"))
-		menu.addItem(newFolderFeedItem)
-		
-		return menu
-	}
+                let newFolderFeedItem = NSMenuItem()
+                newFolderFeedItem.title = NSLocalizedString("New Folder…", comment: "New Folder")
+                newFolderFeedItem.action = Selector(("showAddFolderWindow:"))
+                menu.addItem(newFolderFeedItem)
+
+                let newSmartFeedItem = NSMenuItem()
+                newSmartFeedItem.title = NSLocalizedString("New Smart Feed…", comment: "New Smart Feed")
+                newSmartFeedItem.action = Selector(("showAddSmartFeedWindow:"))
+                menu.addItem(newSmartFeedItem)
+
+                return menu
+        }
 
 	func updateArticleThemeMenu() {
 		let articleThemeMenu = NSMenu()

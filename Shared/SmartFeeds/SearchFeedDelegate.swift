@@ -14,9 +14,9 @@ import ArticlesDatabase
 
 struct SearchFeedDelegate: SmartFeedDelegate {
 
-	var feedID: FeedIdentifier? {
-		return FeedIdentifier.smartFeed(String(describing: SearchFeedDelegate.self))
-	}
+        var feedID: FeedIdentifier? {
+                return FeedIdentifier.smartFeed("search:\(searchString)")
+        }
 
 	var nameForDisplay: String {
 		return nameForDisplayPrefix + searchString

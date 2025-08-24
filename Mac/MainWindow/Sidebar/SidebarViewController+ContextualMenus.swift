@@ -362,8 +362,9 @@ private extension SidebarViewController {
 
 		let menu = NSMenu(title: "")
 
-		menu.addItem(withTitle: NSLocalizedString("New Feed", comment: "Command"), action: #selector(AppDelegate.showAddWebFeedWindow(_:)), keyEquivalent: "")
-		menu.addItem(withTitle: NSLocalizedString("New Folder", comment: "Command"), action: #selector(AppDelegate.showAddFolderWindow(_:)), keyEquivalent: "")
+        menu.addItem(withTitle: NSLocalizedString("New Feed", comment: "Command"), action: #selector(AppDelegate.showAddWebFeedWindow(_:)), keyEquivalent: "")
+        menu.addItem(withTitle: NSLocalizedString("New Folder", comment: "Command"), action: #selector(AppDelegate.showAddFolderWindow(_:)), keyEquivalent: "")
+        menu.addItem(withTitle: NSLocalizedString("New Smart Feed", comment: "Command"), action: #selector(AppDelegate.showAddSmartFeedWindow(_:)), keyEquivalent: "")
 
 		return menu
 	}
