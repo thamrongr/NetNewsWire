@@ -55,9 +55,10 @@ final class AppDefaults {
 		static let addWebFeedAccountID = "addWebFeedAccountID"
 		static let addWebFeedFolderName = "addWebFeedFolderName"
 		static let addFolderAccountID = "addFolderAccountID"
-		static let useSystemBrowser = "useSystemBrowser"
-		static let currentThemeName = "currentThemeName"
-	}
+                static let useSystemBrowser = "useSystemBrowser"
+                static let currentThemeName = "currentThemeName"
+                static let smartFeedKeywords = "smartFeedKeywords"
+        }
 
 	let isDeveloperBuild: Bool = {
 		if let dev = Bundle.main.object(forInfoDictionaryKey: "DeveloperEntitlements") as? String, dev == "-dev" {
@@ -104,14 +105,23 @@ final class AppDefaults {
 		}
 	}
 	
-	var addFolderAccountID: String? {
-		get {
-			return AppDefaults.string(for: Key.addFolderAccountID)
-		}
-		set {
-			AppDefaults.setString(for: Key.addFolderAccountID, newValue)
-		}
-	}
+        var addFolderAccountID: String? {
+                get {
+                        return AppDefaults.string(for: Key.addFolderAccountID)
+                }
+                set {
+                        AppDefaults.setString(for: Key.addFolderAccountID, newValue)
+                }
+        }
+
+        var smartFeedKeywords: [String] {
+                get {
+                        return AppDefaults.store.stringArray(forKey: Key.smartFeedKeywords) ?? []
+                }
+                set {
+                        AppDefaults.store.set(newValue, forKey: Key.smartFeedKeywords)
+                }
+        }
 	
 	var useSystemBrowser: Bool {
 		get {
