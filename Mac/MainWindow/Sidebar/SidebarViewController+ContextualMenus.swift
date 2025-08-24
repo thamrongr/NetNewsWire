@@ -79,129 +79,155 @@ extension SidebarViewController {
 	
 	@objc func shareAllUnreadAsReadFromContextualMenu(_ sender: Any?) {
 
-			guard let menuItem = sender as? NSMenuItem,
-				  let smartFeed = menuItem.representedObject as? PseudoFeed,
-				  let unreadFeed = smartFeed as? UnreadFeed else {
-					return
+		guard let menuItem = sender as? NSMenuItem,
+			  let smartFeed = menuItem.representedObject as? PseudoFeed,
+			  let unreadFeed = smartFeed as? UnreadFeed else {
+				return
+		}
+
+		guard let articlesSet = try? unreadFeed.fetchUnreadArticles() else {
+			return
+		}
+
+		let articles = Array(articlesSet).sortedByDate(.orderedAscending)
+
+		let shareText = articles.reduce(into: "") { partial, article in
+			if let title = article.title {
+				partial += "\(title)\n\n"
 			}
-
-			guard let articlesSet = try? unreadFeed.fetchUnreadArticles() else {
-					return
+			if let content = article.extractedArticle?.content {
+				partial += content.convertingToPlainText()
+			} else if let html = article.contentHTML {
+				partial += html.convertingToPlainText()
+			} else if let contentText = article.contentText {
+				partial += contentText
 			}
+			partial += "\n\n"
+		}
 
-                        let articles = Array(articlesSet).sortedByDate(.orderedAscending)
+		let articlesByAccount = Dictionary(grouping: articles, by: { $0.accountID })
 
-                        let shareText = articles.reduce(into: "") { partial, article in
-                                        if let title = article.title {
-                                                        partial += "\(title)\n\n"
-                                        }
-                                        if let content = article.extractedArticle?.content {
-                                                        partial += content.convertingToPlainText()
-                                        } else if let html = article.contentHTML {
-                                                        partial += html.convertingToPlainText()
-                                        } else if let contentText = article.contentText {
-                                                        partial += contentText
-                                        }
-                                        partial += "\n\n"
-                        }
-
-                        let articlesByAccount = Dictionary(grouping: articles, by: { $0.accountID })
-
-                        var accountSaveText: [Account: String] = [:]
-                        for (accountID, accountArticles) in articlesByAccount {
-                                guard let account = AccountManager.shared.existingAccount(with: accountID) else { continue }
-                                let text = accountArticles.reduce(into: "") { partial, article in
-                                        if let title = article.title {
-                                                partial += "Title: \(title)\n\n"
-                                        }
-									
-										partial += "Content : \n\n"
-                                        if article.webFeed?.isArticleExtractorTextAlwaysOn ?? false {
-                                                if let content = article.extractedArticle?.content {
-                                                        partial += content.convertingToPlainText()
-                                                } else if let html = article.contentHTML {
-                                                        partial += html.convertingToPlainText()
-                                                } else if let contentText = article.contentText {
-                                                        partial += contentText
-                                                }
-                                        } else {
-                                                if let contentText = article.contentText {
-                                                        partial += contentText
-                                                } else if let html = article.contentHTML {
-                                                        partial += html.convertingToPlainText()
-                                                } else if let content = article.extractedArticle?.content {
-                                                        partial += content.convertingToPlainText()
-                                                }
-                                        }
-										partial += "\n\nurl: "
-									
-										if let rawLink = article.rawLink {
-											partial += "\(rawLink)"
-										} else if let rawExternalLink = article.rawExternalLink {
-											partial += "\(rawExternalLink)"
-										}
-										
-										partial += "\n\n\n\n"
-									
-                                }
-                                accountSaveText[account] = text
-                        }
-
-
-			let alert = NSAlert()
-			alert.messageText = NSLocalizedString("Share or Save", comment: "Share or Save")
-			alert.informativeText = NSLocalizedString("Do you want to share or save all unread articles?", comment: "Share or Save")
-			alert.addButton(withTitle: NSLocalizedString("Share", comment: "Share"))
-			alert.addButton(withTitle: NSLocalizedString("Save…", comment: "Save"))
-			alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "Cancel"))
-			let response = alert.runModal()
-
-                        if response == .alertFirstButtonReturn {
-                                        let picker = NSSharingServicePicker(items: [shareText])
-                                        picker.show(relativeTo: view.bounds, of: view, preferredEdge: .minY)
-                        } else if response == .alertSecondButtonReturn {
-                                        let formatter = DateFormatter()
-                                        formatter.timeZone = .current
-                                        formatter.dateFormat = "yyyy-MM-dd"
-                                        let dateString = formatter.string(from: Date())
-
-                                        if accountSaveText.count <= 1, let (account, text) = accountSaveText.first {
-                                                let panel = NSSavePanel()
-                                                panel.allowedContentTypes = [UTType.plainText]
-                                                let accountName = account.nameForDisplay.replacingOccurrences(of: " ", with: "").trimmingCharacters(in: .whitespaces)
-                                                panel.nameFieldStringValue = "AllUnread_\(dateString)_\(accountName).txt"
-                                                panel.beginSheetModal(for: view.window!) { result in
-                                                        if result == .OK, let url = panel.url {
-                                                                try? text.write(to: url, atomically: true, encoding: .utf8)
-                                                        }
-                                                }
-                                        } else {
-                                                let panel = NSOpenPanel()
-                                                panel.canChooseDirectories = true
-                                                panel.canChooseFiles = false
-                                                panel.allowsMultipleSelection = false
-                                                panel.prompt = NSLocalizedString("Choose", comment: "Choose")
-                                                panel.title = NSLocalizedString("Choose Folder", comment: "Choose Folder")
-                                                panel.beginSheetModal(for: view.window!) { result in
-                                                        if result == .OK, let directory = panel.url {
-                                                                for (account, text) in accountSaveText {
-                                                                        let accountName = account.nameForDisplay.replacingOccurrences(of: " ", with: "").trimmingCharacters(in: .whitespaces)
-                                                                        let fileURL = directory.appendingPathComponent("AllUnread_\(dateString)_\(accountName).txt")
-                                                                        try? text.write(to: fileURL, atomically: true, encoding: .utf8)
-                                                                }
-                                                        }
-                                                }
-                                        }
-                        } else {
-                                        return
-                        }
-
-			guard let undoManager = undoManager, let markReadCommand = MarkStatusCommand(initialArticles: articles, markingRead: true, undoManager: undoManager) else {
-					return
+		var accountSaveText: [Account: String] = [:]
+		for (accountID, accountArticles) in articlesByAccount {
+			guard let account = AccountManager.shared.existingAccount(with: accountID) else { continue }
+			let text = accountArticles.reduce(into: "") { partial, article in
+				if let title = article.title {
+					partial += "Title: \(title)\n\n"
+				}
+			
+				partial += "Content : \n\n"
+				if article.webFeed?.isArticleExtractorTextAlwaysOn ?? false {
+					if let content = article.extractedArticle?.content {
+							partial += content.convertingToPlainText()
+					} else if let html = article.contentHTML {
+							partial += html.convertingToPlainText()
+					} else if let contentText = article.contentText {
+							partial += contentText
+					}
+				} else {
+					if let contentText = article.contentText {
+							partial += contentText
+					} else if let html = article.contentHTML {
+							partial += html.convertingToPlainText()
+					} else if let content = article.extractedArticle?.content {
+							partial += content.convertingToPlainText()
+					}
+				}
+				partial += "\n\nurl: "
+			
+				if let rawLink = article.rawLink {
+					partial += "\(rawLink)"
+				} else if let rawExternalLink = article.rawExternalLink {
+					partial += "\(rawExternalLink)"
+				}
+				
+				partial += "\n\n\n\n"
+				
 			}
-			runCommand(markReadCommand)
+			accountSaveText[account] = text
+		}
+
+
+		let alert = NSAlert()
+		alert.messageText = NSLocalizedString("Share or Save", comment: "Share or Save")
+		alert.informativeText = NSLocalizedString("Do you want to share or save all unread articles?", comment: "Share or Save")
+		alert.addButton(withTitle: NSLocalizedString("Share", comment: "Share"))
+		alert.addButton(withTitle: NSLocalizedString("Save…", comment: "Save"))
+		alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "Cancel"))
+		let response = alert.runModal()
+
+		if response == .alertFirstButtonReturn {
+			let picker = NSSharingServicePicker(items: [shareText])
+			picker.show(relativeTo: view.bounds, of: view, preferredEdge: .minY)
+		} else if response == .alertSecondButtonReturn {
+			let formatter = DateFormatter()
+			formatter.timeZone = .current
+			formatter.dateFormat = "yyyy-MM-dd"
+			let dateString = formatter.string(from: Date())
+
+			if accountSaveText.count <= 1, let (account, text) = accountSaveText.first {
+				let panel = NSSavePanel()
+				panel.allowedContentTypes = [UTType.plainText]
+				let accountName = account.nameForDisplay.replacingOccurrences(of: " ", with: "").trimmingCharacters(in: .whitespaces)
+				panel.nameFieldStringValue = "AllUnread_\(dateString)_\(accountName).txt"
+				panel.beginSheetModal(for: view.window!) { result in
+					if result == .OK, let url = panel.url {
+						let fileURL = self.uniqueFileURL(url)
+						try? text.write(to: fileURL, atomically: true, encoding: .utf8)
+					}
+				}
+			} else {
+				let panel = NSOpenPanel()
+				panel.canChooseDirectories = true
+				panel.canChooseFiles = false
+				panel.allowsMultipleSelection = false
+				panel.prompt = NSLocalizedString("Choose", comment: "Choose")
+				panel.title = NSLocalizedString("Choose Folder", comment: "Choose Folder")
+				panel.beginSheetModal(for: view.window!) { result in
+					if result == .OK, let directory = panel.url {
+						for (account, text) in accountSaveText {
+							let accountName = account.nameForDisplay.replacingOccurrences(of: " ", with: "").trimmingCharacters(in: .whitespaces)
+							let baseURL = directory.appendingPathComponent("AllUnread_\(dateString)_\(accountName).txt")
+							let fileURL = self.uniqueFileURL(baseURL)
+							try? text.write(to: fileURL, atomically: true, encoding: .utf8)
+						}
+					}
+				}
+			}
+		} else {
+			return
+		}
+
+		guard let undoManager = undoManager, let markReadCommand = MarkStatusCommand(initialArticles: articles, markingRead: true, undoManager: undoManager) else {
+				return
+		}
+		runCommand(markReadCommand)
 	}
 
+	func uniqueFileURL(_ url: URL) -> URL {
+		var candidate = url
+		let directory = url.deletingLastPathComponent()
+		let fullBaseName = url.deletingPathExtension().lastPathComponent
+		var baseName = fullBaseName
+		// Detect and reconstruct AllUnread_YYYY-MM-DD_Account style
+		if let match = fullBaseName.range(of: #"^AllUnread_(\d{4}-\d{2}-\d{2})_(.+)$"#, options: .regularExpression) {
+			let components = String(fullBaseName[match]).split(separator: "_", maxSplits: 2)
+			if components.count == 3 {
+				let datePart = components[1]
+				let accountPart = components[2]
+				baseName = "AllUnread_\(datePart)"
+				let extensionType = url.pathExtension
+				var suffix = 2
+				while FileManager.default.fileExists(atPath: candidate.path) {
+					let newName = "\(baseName)_\(suffix)_\(accountPart)"
+					candidate = directory.appendingPathComponent(newName).appendingPathExtension(extensionType)
+					suffix += 1
+				}
+			}
+		}
+		return candidate
+	}
+	
 	@objc func deleteFromContextualMenu(_ sender: Any?) {
 		guard let menuItem = sender as? NSMenuItem, let objects = menuItem.representedObject as? [AnyObject] else {
 			return
@@ -261,25 +287,25 @@ extension SidebarViewController {
 		}
 	}
 	
-        @objc func toggleArticleExtractorFromContextMenu(_ sender: Any?) {
-                guard let item = sender as? NSMenuItem,
-                          let feed = item.representedObject as? WebFeed else {
-                        return
-                }
-                if feed.isArticleExtractorAlwaysOn == nil { feed.isArticleExtractorAlwaysOn = false }
-                feed.isArticleExtractorAlwaysOn?.toggle()
-                NotificationCenter.default.post(Notification(name: .DidUpdateFeedPreferencesFromContextMenu))
-        }
+		@objc func toggleArticleExtractorFromContextMenu(_ sender: Any?) {
+				guard let item = sender as? NSMenuItem,
+						  let feed = item.representedObject as? WebFeed else {
+						return
+				}
+				if feed.isArticleExtractorAlwaysOn == nil { feed.isArticleExtractorAlwaysOn = false }
+				feed.isArticleExtractorAlwaysOn?.toggle()
+				NotificationCenter.default.post(Notification(name: .DidUpdateFeedPreferencesFromContextMenu))
+		}
 
-       @objc func toggleArticleExtractorTextFromContextMenu(_ sender: Any?) {
-               guard let item = sender as? NSMenuItem,
-                         let feed = item.representedObject as? WebFeed else {
-                       return
-               }
-               if feed.isArticleExtractorTextAlwaysOn == nil { feed.isArticleExtractorTextAlwaysOn = false }
-               feed.isArticleExtractorTextAlwaysOn?.toggle()
-               NotificationCenter.default.post(Notification(name: .DidUpdateFeedPreferencesFromContextMenu))
-       }
+	   @objc func toggleArticleExtractorTextFromContextMenu(_ sender: Any?) {
+			   guard let item = sender as? NSMenuItem,
+						 let feed = item.representedObject as? WebFeed else {
+					   return
+			   }
+			   if feed.isArticleExtractorTextAlwaysOn == nil { feed.isArticleExtractorTextAlwaysOn = false }
+			   feed.isArticleExtractorTextAlwaysOn?.toggle()
+			   NotificationCenter.default.post(Notification(name: .DidUpdateFeedPreferencesFromContextMenu))
+	   }
 	
 	func showNotificationsNotEnabledAlert() {
 		DispatchQueue.main.async {
@@ -376,25 +402,25 @@ private extension SidebarViewController {
 		}
 		menu.addItem(notificationMenuItem)
 
-                let articleExtractorText = NSLocalizedString("Always Use Reader View", comment: "Always Use Reader View")
-                let articleExtractorMenuItem = menuItem(articleExtractorText, #selector(toggleArticleExtractorFromContextMenu(_:)), webFeed)
+				let articleExtractorText = NSLocalizedString("Always Use Reader View", comment: "Always Use Reader View")
+				let articleExtractorMenuItem = menuItem(articleExtractorText, #selector(toggleArticleExtractorFromContextMenu(_:)), webFeed)
 
-                if webFeed.isArticleExtractorAlwaysOn == nil || webFeed.isArticleExtractorAlwaysOn! == false {
-                        articleExtractorMenuItem.state = .off
-                } else {
-                        articleExtractorMenuItem.state = .on
-                }
-                menu.addItem(articleExtractorMenuItem)
+				if webFeed.isArticleExtractorAlwaysOn == nil || webFeed.isArticleExtractorAlwaysOn! == false {
+						articleExtractorMenuItem.state = .off
+				} else {
+						articleExtractorMenuItem.state = .on
+				}
+				menu.addItem(articleExtractorMenuItem)
 
-               let textExtractorText = NSLocalizedString("Always Extract Text", comment: "Always Extract Text")
-               let textExtractorMenuItem = menuItem(textExtractorText, #selector(toggleArticleExtractorTextFromContextMenu(_:)), webFeed)
+			   let textExtractorText = NSLocalizedString("Always Extract Text", comment: "Always Extract Text")
+			   let textExtractorMenuItem = menuItem(textExtractorText, #selector(toggleArticleExtractorTextFromContextMenu(_:)), webFeed)
 
-               if webFeed.isArticleExtractorTextAlwaysOn == nil || webFeed.isArticleExtractorTextAlwaysOn! == false {
-                       textExtractorMenuItem.state = .off
-               } else {
-                       textExtractorMenuItem.state = .on
-               }
-               menu.addItem(textExtractorMenuItem)
+			   if webFeed.isArticleExtractorTextAlwaysOn == nil || webFeed.isArticleExtractorTextAlwaysOn! == false {
+					   textExtractorMenuItem.state = .off
+			   } else {
+					   textExtractorMenuItem.state = .on
+			   }
+			   menu.addItem(textExtractorMenuItem)
 
 		menu.addItem(NSMenuItem.separator())
 		
