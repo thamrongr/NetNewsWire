@@ -455,13 +455,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSUserInterfaceValidations, 
 			return !isDisplayingSheet && !AccountManager.shared.anyAccountHasNetNewsWireNewsSubscription() && !AccountManager.shared.activeAccounts.isEmpty
 		}
 		
-		if item.action == #selector(sortByNewestArticleOnTop(_:)) || item.action == #selector(sortByOldestArticleOnTop(_:)) {
-			return mainWindowController?.isOpen ?? false
-		}
-		
-		if item.action == #selector(showAddWebFeedWindow(_:)) || item.action == #selector(showAddFolderWindow(_:)) {
-			return !isDisplayingSheet && !AccountManager.shared.activeAccounts.isEmpty
-		}
+                if item.action == #selector(sortByNewestArticleOnTop(_:)) || item.action == #selector(sortByOldestArticleOnTop(_:)) {
+                        return mainWindowController?.isOpen ?? false
+                }
+
+                if item.action == #selector(showAddWebFeedWindow(_:)) || item.action == #selector(showAddFolderWindow(_:)) || item.action == #selector(showAddSmartFeedWindow(_:)) {
+                        return !isDisplayingSheet && !AccountManager.shared.activeAccounts.isEmpty
+                }
 		
 		#if !MAC_APP_STORE
 		if item.action == #selector(toggleWebInspectorEnabled(_:)) {
@@ -538,10 +538,28 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSUserInterfaceValidations, 
 		addWebFeed(nil)
 	}
 
-	@IBAction func showAddFolderWindow(_ sender: Any?) {
-		createAndShowMainWindowIfNecessary()
-		showAddFolderSheetOnWindow(mainWindowController!.window!)
-	}
+        @IBAction func showAddFolderWindow(_ sender: Any?) {
+                createAndShowMainWindowIfNecessary()
+                showAddFolderSheetOnWindow(mainWindowController!.window!)
+        }
+
+        @IBAction func showAddSmartFeedWindow(_ sender: Any?) {
+                createAndShowMainWindowIfNecessary()
+                let alert = NSAlert()
+                alert.messageText = NSLocalizedString("New Smart Feed", comment: "New Smart Feed")
+                alert.informativeText = NSLocalizedString("Enter a keyword to create a smart feed that searches article titles and content.", comment: "Add Smart Feed Informative Text")
+                let textField = NSTextField(string: "")
+                textField.frame = NSRect(x: 0, y: 0, width: 240, height: 24)
+                alert.accessoryView = textField
+                alert.addButton(withTitle: NSLocalizedString("OK", comment: "OK"))
+                alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "Cancel"))
+                if alert.runModal() == .alertFirstButtonReturn {
+                        let keyword = textField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !keyword.isEmpty {
+                                SmartFeedsController.shared.addSearchFeed(keyword: keyword)
+                        }
+                }
+        }
 
 	@IBAction func showKeyboardShortcutsWindow(_ sender: Any?) {
 		if keyboardShortcutsWindowController == nil {

@@ -16,34 +16,67 @@ final class SmartFeedsController: DisplayNameProvider, ContainerIdentifiable {
 		return ContainerIdentifier.smartFeedController
 	}
 
-	public static let shared = SmartFeedsController()
-	let nameForDisplay = NSLocalizedString("Smart Feeds", comment: "Smart Feeds group title")
+        public static let shared = SmartFeedsController()
+        let nameForDisplay = NSLocalizedString("Smart Feeds", comment: "Smart Feeds group title")
 
-	var smartFeeds = [Feed]()
-	let todayFeed = SmartFeed(delegate: TodayFeedDelegate())
-	let unreadFeed = UnreadFeed()
-	let starredFeed = SmartFeed(delegate: StarredFeedDelegate())
+        private var userSearchKeywords = [String]()
+        private var userSearchFeeds = [SmartFeed]()
 
-	private init() {
-		self.smartFeeds = [todayFeed, unreadFeed, starredFeed]
-	}
-	
-	func find(by identifier: FeedIdentifier) -> PseudoFeed? {
-		switch identifier {
-		case .smartFeed(let stringIdentifer):
-			switch stringIdentifer {
-			case String(describing: TodayFeedDelegate.self):
-				return todayFeed
-			case String(describing: UnreadFeed.self):
-				return unreadFeed
-			case String(describing: StarredFeedDelegate.self):
-				return starredFeed
-			default:
-				return nil
-			}
-		default:
-			return nil
-		}
-	}
-	
+        private(set) var smartFeeds = [Feed]()
+        let todayFeed = SmartFeed(delegate: TodayFeedDelegate())
+        let unreadFeed = UnreadFeed()
+        let starredFeed = SmartFeed(delegate: StarredFeedDelegate())
+
+        private init() {
+                userSearchKeywords = AppDefaults.shared.smartFeedKeywords
+                userSearchFeeds = userSearchKeywords.map { SmartFeed(delegate: SearchFeedDelegate(searchString: $0)) }
+                rebuildSmartFeeds()
+        }
+
+        func addSearchFeed(keyword: String) {
+                guard !userSearchKeywords.contains(keyword) else { return }
+                userSearchKeywords.append(keyword)
+                userSearchFeeds.append(SmartFeed(delegate: SearchFeedDelegate(searchString: keyword)))
+                saveSearchKeywords()
+                rebuildSmartFeeds()
+                NotificationCenter.default.post(name: .ChildrenDidChange, object: self)
+        }
+
+        func removeSearchFeed(_ feed: PseudoFeed) {
+                guard case let .smartFeed(id)? = feed.feedID, id.hasPrefix("search:"), let smartFeed = feed as? SmartFeed else {
+                        return
+                }
+
+                let keyword = String(id.dropFirst("search:".count))
+
+                if let index = userSearchKeywords.firstIndex(of: keyword) {
+                        userSearchKeywords.remove(at: index)
+                }
+
+                if let index = userSearchFeeds.firstIndex(where: { $0 === smartFeed }) {
+                        userSearchFeeds.remove(at: index)
+                }
+
+                saveSearchKeywords()
+                rebuildSmartFeeds()
+                NotificationCenter.default.post(name: .ChildrenDidChange, object: self)
+        }
+
+        private func rebuildSmartFeeds() {
+                smartFeeds = [todayFeed, unreadFeed, starredFeed] + userSearchFeeds
+        }
+
+        private func saveSearchKeywords() {
+                AppDefaults.shared.smartFeedKeywords = userSearchKeywords
+        }
+
+        func find(by identifier: FeedIdentifier) -> PseudoFeed? {
+                for feed in smartFeeds {
+                        if let id = feed.feedID, id == identifier {
+                                return feed as? PseudoFeed
+                        }
+                }
+                return nil
+        }
+
 }

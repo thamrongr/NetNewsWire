@@ -38,10 +38,11 @@ final class AppDefaults {
 		static let addWebFeedFolderName = "addWebFeedFolderName"
 		static let addFolderAccountID = "addFolderAccountID"
 		static let importOPMLAccountID = "importOPMLAccountID"
-		static let exportOPMLAccountID = "exportOPMLAccountID"
-		static let defaultBrowserID = "defaultBrowserID"
-		static let currentThemeName = "currentThemeName"
-		static let articleContentJavascriptEnabled = "articleContentJavascriptEnabled"
+                static let exportOPMLAccountID = "exportOPMLAccountID"
+                static let defaultBrowserID = "defaultBrowserID"
+                static let currentThemeName = "currentThemeName"
+                static let articleContentJavascriptEnabled = "articleContentJavascriptEnabled"
+                static let smartFeedKeywords = "smartFeedKeywords"
 
 		// Hidden prefs
 		static let showDebugMenu = "ShowDebugMenu"
@@ -185,14 +186,23 @@ final class AppDefaults {
 		}
 	}
 	
-	var exportOPMLAccountID: String? {
-		get {
-			return AppDefaults.string(for: Key.exportOPMLAccountID)
-		}
-		set {
-			AppDefaults.setString(for: Key.exportOPMLAccountID, newValue)
-		}
-	}
+        var exportOPMLAccountID: String? {
+                get {
+                        return AppDefaults.string(for: Key.exportOPMLAccountID)
+                }
+                set {
+                        AppDefaults.setString(for: Key.exportOPMLAccountID, newValue)
+                }
+        }
+
+        var smartFeedKeywords: [String] {
+                get {
+                        return UserDefaults.standard.stringArray(forKey: Key.smartFeedKeywords) ?? []
+                }
+                set {
+                        UserDefaults.standard.set(newValue, forKey: Key.smartFeedKeywords)
+                }
+        }
 
 	var defaultBrowserID: String? {
 		get {
