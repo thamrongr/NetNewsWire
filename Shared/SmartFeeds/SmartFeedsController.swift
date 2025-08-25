@@ -42,26 +42,6 @@ final class SmartFeedsController: DisplayNameProvider, ContainerIdentifiable {
                 NotificationCenter.default.post(name: .ChildrenDidChange, object: self)
         }
 
-        func removeSearchFeed(_ feed: PseudoFeed) {
-                guard case let .smartFeed(id)? = feed.feedID, id.hasPrefix("search:"), let smartFeed = feed as? SmartFeed else {
-                        return
-                }
-
-                let keyword = String(id.dropFirst("search:".count))
-
-                if let index = userSearchKeywords.firstIndex(of: keyword) {
-                        userSearchKeywords.remove(at: index)
-                }
-
-                if let index = userSearchFeeds.firstIndex(where: { $0 === smartFeed }) {
-                        userSearchFeeds.remove(at: index)
-                }
-
-                saveSearchKeywords()
-                rebuildSmartFeeds()
-                NotificationCenter.default.post(name: .ChildrenDidChange, object: self)
-        }
-
         private func rebuildSmartFeeds() {
                 smartFeeds = [todayFeed, unreadFeed, starredFeed] + userSearchFeeds
         }
