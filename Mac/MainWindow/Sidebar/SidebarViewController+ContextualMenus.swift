@@ -228,22 +228,29 @@ extension SidebarViewController {
 		return candidate
 	}
 	
-	@objc func deleteFromContextualMenu(_ sender: Any?) {
-		guard let menuItem = sender as? NSMenuItem, let objects = menuItem.representedObject as? [AnyObject] else {
-			return
-		}
+        @objc func deleteFromContextualMenu(_ sender: Any?) {
+                guard let menuItem = sender as? NSMenuItem, let objects = menuItem.representedObject as? [AnyObject] else {
+                        return
+                }
 		
 		let nodes = objects.compactMap { treeController.nodeInTreeRepresentingObject($0) }
 
-		let alert = SidebarDeleteItemsAlert.build(nodes)
-		alert.beginSheetModal(for: view.window!) { [weak self] result in
-			if result == NSApplication.ModalResponse.alertFirstButtonReturn {
-				self?.deleteNodes(nodes)
-			}
-		}
-	}
+                let alert = SidebarDeleteItemsAlert.build(nodes)
+                alert.beginSheetModal(for: view.window!) { [weak self] result in
+                        if result == NSApplication.ModalResponse.alertFirstButtonReturn {
+                                self?.deleteNodes(nodes)
+                        }
+                }
+        }
 
-	@objc func renameFromContextualMenu(_ sender: Any?) {
+        @objc func deleteSmartFeedFromContextualMenu(_ sender: Any?) {
+                guard let menuItem = sender as? NSMenuItem, let smartFeed = menuItem.representedObject as? PseudoFeed else {
+                        return
+                }
+                SmartFeedsController.shared.removeSearchFeed(smartFeed)
+        }
+
+        @objc func renameFromContextualMenu(_ sender: Any?) {
 
 		guard let window = view.window, let menuItem = sender as? NSMenuItem, let object = menuItem.representedObject as? DisplayNameProvider, object is WebFeed || object is Folder else {
 			return
@@ -446,18 +453,22 @@ private extension SidebarViewController {
 		return menu.numberOfItems > 0 ? menu : nil
 	}
 
-	func menuForSmartFeed(_ smartFeed: PseudoFeed) -> NSMenu? {
+        func menuForSmartFeed(_ smartFeed: PseudoFeed) -> NSMenu? {
 
-		let menu = NSMenu(title: "")
+                let menu = NSMenu(title: "")
 
-		if smartFeed.unreadCount > 0 {
-			menu.addItem(markAllReadMenuItem([smartFeed]))
-			if smartFeed is UnreadFeed {
-					menu.addItem(shareAllUnreadMenuItem(smartFeed))
-			}
-		}
-		return menu.numberOfItems > 0 ? menu : nil
-	}
+                if smartFeed.unreadCount > 0 {
+                        menu.addItem(markAllReadMenuItem([smartFeed]))
+                        if smartFeed is UnreadFeed {
+                                        menu.addItem(shareAllUnreadMenuItem(smartFeed))
+                        }
+                }
+                if case let .smartFeed(id)? = smartFeed.feedID, id.hasPrefix("search:") {
+                        menu.addSeparatorIfNeeded()
+                        menu.addItem(deleteSmartFeedMenuItem(smartFeed))
+                }
+                return menu.numberOfItems > 0 ? menu : nil
+        }
 
 	func menuForMultipleObjects(_ objects: [Any]) -> NSMenu? {
 
@@ -484,10 +495,14 @@ private extension SidebarViewController {
 			return menuItem(NSLocalizedString("Share All as Read", comment: "Command"), #selector(shareAllUnreadAsReadFromContextualMenu(_:)), object)
 	}
 	
-	func deleteMenuItem(_ objects: [Any]) -> NSMenuItem {
+        func deleteMenuItem(_ objects: [Any]) -> NSMenuItem {
 
-		return menuItem(NSLocalizedString("Delete", comment: "Command"), #selector(deleteFromContextualMenu(_:)), objects)
-	}
+                return menuItem(NSLocalizedString("Delete", comment: "Command"), #selector(deleteFromContextualMenu(_:)), objects)
+        }
+
+        func deleteSmartFeedMenuItem(_ object: Any) -> NSMenuItem {
+                return menuItem(NSLocalizedString("Delete", comment: "Command"), #selector(deleteSmartFeedFromContextualMenu(_:)), object)
+        }
 
 	func renameMenuItem(_ object: Any) -> NSMenuItem {
 
@@ -521,7 +536,7 @@ private extension SidebarViewController {
 		return object is WebFeed || object is Folder
 	}
 
-	func menuItem(_ title: String, _ action: Selector, _ representedObject: Any) -> NSMenuItem {
+        func menuItem(_ title: String, _ action: Selector, _ representedObject: Any) -> NSMenuItem {
 
 		let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
 		item.representedObject = representedObject
